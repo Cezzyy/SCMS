@@ -69,22 +69,7 @@ const handleLogin = () => {
           </div>
         </div>
 
-        <!-- Remember Me & Forgot Password -->
-        <div class="flex items-center">
-          <div class="flex items-center">
-            <input
-              id="remember-me"
-              type="checkbox"
-              class="h-4 w-4 text-accent1 focus:ring-accent1 border-gray-300 rounded"
-            />
-            <label for="remember-me" class="ml-2 block text-sm text-gray-600 font-medium">Remember me</label>
-          </div>
-        </div>
-
         <!-- Login Button -->
-        <div class="flex items-center justify-end mb-4">
-          <a href="#" class="text-sm font-medium text-accent1 hover:text-accent2">Contact IT Support</a>
-        </div>
         <button
           type="submit"
           class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-accent1 hover:bg-accent2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent1 transition-colors duration-200"
