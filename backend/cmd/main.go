@@ -48,19 +48,37 @@ func main() {
 
 	// Initialize repositories
 	customerRepo := repository.NewCustomerRepository(db)
+	contactRepo := repository.NewContactRepository(db)
 
 	// Initialize handlers
 	customerHandler := handlers.NewCustomerHandler(customerRepo)
+	contactHandler := handlers.NewContactHandler(contactRepo, customerRepo)
 
-	// Register routes
-	customerHandler.Register(e)
-
-	// Define a simple health check route
+	// API Routes
+	// Health check
 	e.GET("/api/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{
 			"status": "healthy",
 		})
 	})
+
+	// Customer routes
+	e.GET("/api/customers", customerHandler.GetAllCustomers)
+	e.GET("/api/customers/:id", customerHandler.GetCustomerByID)
+	e.POST("/api/customers", customerHandler.CreateCustomer)
+	e.PUT("/api/customers/:id", customerHandler.UpdateCustomer)
+	e.DELETE("/api/customers/:id", customerHandler.DeleteCustomer)
+
+	// Contact routes - scoped under customer
+	e.GET("/api/customers/:customer_id/contacts", contactHandler.GetContactsByCustomer)
+	e.GET("/api/customers/:customer_id/contacts/:id", contactHandler.GetContactByID)
+	e.POST("/api/customers/:customer_id/contacts", contactHandler.CreateContact)
+	e.PUT("/api/customers/:customer_id/contacts/:id", contactHandler.UpdateContact)
+	e.DELETE("/api/customers/:customer_id/contacts/:id", contactHandler.DeleteContact)
+
+	// Global contact routes
+	e.GET("/api/contacts", contactHandler.GetAllContacts)
+	e.GET("/api/contacts/:id", contactHandler.GetContactByID)
 
 	// Start server
 	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
