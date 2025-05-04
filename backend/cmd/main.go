@@ -7,6 +7,8 @@ import (
 	"os"
 
 	"github.com/Cezzyy/SCMS/backend/internal/database"
+	"github.com/Cezzyy/SCMS/backend/internal/handlers"
+	"github.com/Cezzyy/SCMS/backend/internal/repository"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog"
@@ -44,8 +46,17 @@ func main() {
 		ContentSecurityPolicy: "default-src 'self'",
 	}))
 
+	// Initialize repositories
+	customerRepo := repository.NewCustomerRepository(db)
+
+	// Initialize handlers
+	customerHandler := handlers.NewCustomerHandler(customerRepo)
+
+	// Register routes
+	customerHandler.Register(e)
+
 	// Define a simple health check route
-	e.GET("/health", func(c echo.Context) error {
+	e.GET("/api/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{
 			"status": "healthy",
 		})
