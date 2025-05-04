@@ -21,15 +21,6 @@ func NewCustomerHandler(customerRepo *repository.CustomerRepository) *CustomerHa
 	}
 }
 
-// Register registers the routes for the customer handler
-func (h *CustomerHandler) Register(e *echo.Echo) {
-	e.GET("/api/customers", h.GetAllCustomers)
-	e.GET("/api/customers/:id", h.GetCustomerByID)
-	e.POST("/api/customers", h.CreateCustomer)
-	e.PUT("/api/customers/:id", h.UpdateCustomer)
-	e.DELETE("/api/customers/:id", h.DeleteCustomer)
-}
-
 // GetAllCustomers returns all customers
 func (h *CustomerHandler) GetAllCustomers(c echo.Context) error {
 	ctx := c.Request().Context()
