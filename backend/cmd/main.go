@@ -68,6 +68,7 @@ func main() {
 	e.POST("/api/customers", customerHandler.CreateCustomer)
 	e.PUT("/api/customers/:id", customerHandler.UpdateCustomer)
 	e.DELETE("/api/customers/:id", customerHandler.DeleteCustomer)
+	e.GET("/api/customers/check", customerHandler.CheckCompanyExists)
 
 	// Contact routes - scoped under customer
 	e.GET("/api/customers/:customer_id/contacts", contactHandler.GetContactsByCustomer)
@@ -79,6 +80,7 @@ func main() {
 	// Global contact routes
 	e.GET("/api/contacts", contactHandler.GetAllContacts)
 	e.GET("/api/contacts/:id", contactHandler.GetContactByID)
+	e.GET("/api/contacts/check", contactHandler.CheckEmailExists)
 
 	// Start server
 	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()

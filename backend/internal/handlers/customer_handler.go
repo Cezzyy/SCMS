@@ -180,3 +180,26 @@ func (h *CustomerHandler) DeleteCustomer(c echo.Context) error {
 
 	return c.NoContent(http.StatusNoContent)
 }
+
+// CheckCompanyExists checks if a company name already exists
+func (h *CustomerHandler) CheckCompanyExists(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	companyName := c.QueryParam("company_name")
+	if companyName == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Company name is required",
+		})
+	}
+
+	exists, err := h.customerRepo.CheckCompanyExists(ctx, companyName)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to check company existence",
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]bool{
+		"exists": exists,
+	})
+}

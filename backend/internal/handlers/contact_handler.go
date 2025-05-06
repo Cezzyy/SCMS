@@ -290,7 +290,7 @@ func (h *ContactHandler) DeleteContact(c echo.Context) error {
 		})
 	}
 
-	// Verify contact exists and belongs to the customer
+	// Verify contact belongs to customer
 	contact, err := h.contactRepo.GetByID(ctx, id)
 	if err != nil {
 		if err.Error() == "contact not found" {
@@ -299,7 +299,7 @@ func (h *ContactHandler) DeleteContact(c echo.Context) error {
 			})
 		}
 		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to retrieve contact",
+			"error": "Failed to verify contact",
 		})
 	}
 
@@ -311,16 +311,33 @@ func (h *ContactHandler) DeleteContact(c echo.Context) error {
 
 	err = h.contactRepo.Delete(ctx, id)
 	if err != nil {
-		if err.Error() == "contact not found" {
-			return c.JSON(http.StatusNotFound, map[string]string{
-				"error": "Contact not found",
-			})
-		}
-
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Failed to delete contact",
 		})
 	}
 
 	return c.NoContent(http.StatusNoContent)
+}
+
+// CheckEmailExists checks if an email already exists
+func (h *ContactHandler) CheckEmailExists(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	email := c.QueryParam("email")
+	if email == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Email is required",
+		})
+	}
+
+	exists, err := h.contactRepo.CheckEmailExists(ctx, email)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to check email existence",
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]bool{
+		"exists": exists,
+	})
 }
