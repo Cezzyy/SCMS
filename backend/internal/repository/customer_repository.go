@@ -153,3 +153,11 @@ func (r *CustomerRepository) SearchCustomers(ctx context.Context, term string) (
 	err := r.db.SelectContext(ctx, &customers, query, "%"+term+"%")
 	return customers, err
 }
+
+// CheckCompanyExists checks if a company name already exists
+func (r *CustomerRepository) CheckCompanyExists(ctx context.Context, companyName string) (bool, error) {
+	var exists bool
+	query := `SELECT EXISTS(SELECT 1 FROM customers WHERE company_name = $1)`
+	err := r.db.GetContext(ctx, &exists, query, companyName)
+	return exists, err
+}

@@ -9,7 +9,7 @@ export const useCustomerStore = defineStore('customer', {
     loading: false,
     error: null as string | null
   }),
-  
+
   getters: {
     getCustomerById: (state) => (id: number): Customer | undefined => {
       return state.customers.find(customer => customer.customer_id === id);
@@ -17,7 +17,7 @@ export const useCustomerStore = defineStore('customer', {
     isLoading: (state) => state.loading,
     hasError: (state) => state.error !== null
   },
-  
+
   actions: {
     /**
      * Fetch all customers
@@ -26,11 +26,11 @@ export const useCustomerStore = defineStore('customer', {
       try {
         this.loading = true;
         this.error = null;
-        
+
         const params = search ? { search } : {};
-        const response = await apiClient.get<Customer[]>('/customers', { params });
+        const response = await apiClient.get<Customer[]>('/api/customers', { params });
         this.customers = response.data;
-        
+
         return response.data;
       } catch (err) {
         this.error = 'Failed to fetch customers';
@@ -48,10 +48,10 @@ export const useCustomerStore = defineStore('customer', {
       try {
         this.loading = true;
         this.error = null;
-        
-        const response = await apiClient.get<Customer>(`/customers/${id}`);
+
+        const response = await apiClient.get<Customer>(`/api/customers/${id}`);
         this.currentCustomer = response.data;
-        
+
         return response.data;
       } catch (err) {
         this.error = 'Failed to fetch customer details';
@@ -69,12 +69,19 @@ export const useCustomerStore = defineStore('customer', {
       try {
         this.loading = true;
         this.error = null;
-        
-        const response = await apiClient.post<Customer>('/customers', customer);
-        
+
+        // Ensure email and phone are included in the customer data
+        const customerData = {
+          ...customer,
+          email: customer.email || '',
+          phone: customer.phone || ''
+        };
+
+        const response = await apiClient.post<Customer>('/api/customers', customerData);
+
         // Add new customer to the list
         this.customers.push(response.data);
-        
+
         return response.data;
       } catch (err) {
         this.error = 'Failed to create customer';
@@ -92,23 +99,30 @@ export const useCustomerStore = defineStore('customer', {
       try {
         this.loading = true;
         this.error = null;
-        
-        const response = await apiClient.put<Customer>(`/customers/${customer.customer_id}`, customer);
-        
+
+        // Ensure email and phone are included in the update
+        const customerData = {
+          ...customer,
+          email: customer.email || '',
+          phone: customer.phone || ''
+        };
+
+        const response = await apiClient.put<Customer>(`/api/customers/${customer.customer_id}`, customerData);
+
         // Update customer in the list
         const index = this.customers.findIndex(
           (c) => c.customer_id === customer.customer_id
         );
-        
+
         if (index !== -1) {
           this.customers[index] = response.data;
         }
-        
+
         // Update current customer if it's the one being edited
         if (this.currentCustomer?.customer_id === customer.customer_id) {
           this.currentCustomer = response.data;
         }
-        
+
         return response.data;
       } catch (err) {
         this.error = 'Failed to update customer';
@@ -126,19 +140,19 @@ export const useCustomerStore = defineStore('customer', {
       try {
         this.loading = true;
         this.error = null;
-        
-        await apiClient.delete(`/customers/${id}`);
-        
+
+        await apiClient.delete(`/api/customers/${id}`);
+
         // Remove customer from the list
         this.customers = this.customers.filter(
           (customer) => customer.customer_id !== id
         );
-        
+
         // Reset current customer if it's the one being deleted
         if (this.currentCustomer?.customer_id === id) {
           this.currentCustomer = null;
         }
-        
+
         return true;
       } catch (err) {
         this.error = 'Failed to delete customer';
@@ -147,6 +161,21 @@ export const useCustomerStore = defineStore('customer', {
       } finally {
         this.loading = false;
       }
+    },
+
+    /**
+     * Check if a company name already exists
+     */
+    async checkCompanyExists(companyName: string): Promise<boolean> {
+      try {
+        const response = await apiClient.get<{ exists: boolean }>('/api/customers/check', {
+          params: { company_name: companyName }
+        });
+        return response.data.exists;
+      } catch (err) {
+        console.error('Error checking company existence:', err);
+        throw err;
+      }
     }
   }
-}); 
+});

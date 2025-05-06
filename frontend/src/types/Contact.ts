@@ -3,17 +3,12 @@ export interface Contact {
   customer_id: number;
   first_name: string;
   last_name: string;
-  position?: string;
-  phone?: string;
-  email?: string;
-  created_at: string;
-  updated_at: string;
+  position: string;
+  email: string;
+  phone: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export interface ContactCreate extends Omit<Contact, 'contact_id' | 'created_at' | 'updated_at'> {
-  contact_id?: number;
-}
-
-export interface ContactUpdate extends ContactCreate {
-  contact_id: number;
-} 
+export type ContactCreate = Omit<Contact, 'contact_id' | 'created_at' | 'updated_at'>;
+export type ContactUpdate = Partial<ContactCreate> & { contact_id: number }; 

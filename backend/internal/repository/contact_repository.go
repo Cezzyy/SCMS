@@ -174,3 +174,11 @@ func (r *ContactRepository) SearchContacts(ctx context.Context, term string) ([]
 	err := r.db.SelectContext(ctx, &contacts, query, "%"+term+"%")
 	return contacts, err
 }
+
+// CheckEmailExists checks if an email already exists
+func (r *ContactRepository) CheckEmailExists(ctx context.Context, email string) (bool, error) {
+	var exists bool
+	query := `SELECT EXISTS(SELECT 1 FROM contacts WHERE email = $1)`
+	err := r.db.GetContext(ctx, &exists, query, email)
+	return exists, err
+}
