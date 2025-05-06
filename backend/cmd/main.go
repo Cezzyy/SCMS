@@ -46,13 +46,34 @@ func main() {
 		ContentSecurityPolicy: "default-src 'self'",
 	}))
 
+	// JWT secret for user authentication
+	jwtSecret := "your-secret-key-here" 
+
 	// Initialize repositories
 	customerRepo := repository.NewCustomerRepository(db)
 	contactRepo := repository.NewContactRepository(db)
+	userRepo := repository.NewUserRepository(db)
+	productRepo := repository.NewProductRepository(db)
+	inventoryRepo := repository.NewInventoryRepository(db)
 
 	// Initialize handlers
 	customerHandler := handlers.NewCustomerHandler(customerRepo)
 	contactHandler := handlers.NewContactHandler(contactRepo, customerRepo)
+	userHandler := handlers.NewUserHandler(userRepo, jwtSecret)
+	productHandler := handlers.NewProductHandler(productRepo)
+	inventoryHandler := handlers.NewInventoryHandler(inventoryRepo, productRepo)
+
+	// // JWT middleware for protected routes
+	// jwtMiddleware := middleware.JWTWithConfig(middleware.JWTConfig{
+	// 	SigningKey: []byte(jwtSecret),
+	// 	Skipper: func(c echo.Context) bool {
+	// 		// Skip authentication for login and health check routes
+	// 		if c.Path() == "/api/auth/login" || c.Path() == "/api/health" {
+	// 			return true
+	// 		}
+	// 		return false
+	// 	},
+	// })
 
 	// API Routes
 	// Health check
@@ -61,6 +82,18 @@ func main() {
 			"status": "healthy",
 		})
 	})
+
+	// Auth routes - public
+	e.POST("/api/auth/login", userHandler.Login)
+
+	// User routes - protected
+	// usersGroup := e.Group("/api/users", jwtMiddleware)
+	// usersGroup.GET("", userHandler.GetAllUsers)
+	// usersGroup.GET("/:id", userHandler.GetUserByID)
+	// usersGroup.POST("", userHandler.CreateUser)
+	// usersGroup.PUT("/:id", userHandler.UpdateUser)
+	// usersGroup.DELETE("/:id", userHandler.DeleteUser)
+	// usersGroup.PUT("/:id/password", userHandler.ChangePassword)
 
 	// Customer routes
 	e.GET("/api/customers", customerHandler.GetAllCustomers)
@@ -81,6 +114,26 @@ func main() {
 	e.GET("/api/contacts", contactHandler.GetAllContacts)
 	e.GET("/api/contacts/:id", contactHandler.GetContactByID)
 	e.GET("/api/contacts/check", contactHandler.CheckEmailExists)
+
+	// Product routes
+	e.GET("/api/products", productHandler.GetAllProducts)
+	e.GET("/api/products/:id", productHandler.GetProductByID)
+	e.POST("/api/products", productHandler.CreateProduct)
+	e.PUT("/api/products/:id", productHandler.UpdateProduct)
+	e.DELETE("/api/products/:id", productHandler.DeleteProduct)
+
+	// Inventory routes
+	e.GET("/api/inventory", inventoryHandler.GetAllInventory)
+	e.GET("/api/inventory/:id", inventoryHandler.GetInventoryByID)
+	e.GET("/api/inventory/product/:product_id", inventoryHandler.GetInventoryByProductID)
+	e.POST("/api/inventory", inventoryHandler.CreateInventory)
+	e.PUT("/api/inventory/:id", inventoryHandler.UpdateInventory)
+	e.PUT("/api/inventory/:id/stock", inventoryHandler.UpdateStock)
+	e.DELETE("/api/inventory/:id", inventoryHandler.DeleteInventory)
+	
+	// Low stock routes
+	e.GET("/api/inventory/low-stock", inventoryHandler.GetLowStockItems)
+	e.GET("/api/inventory/low-stock/details", inventoryHandler.GetLowStockWithProductInfo)
 
 	// Start server
 	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
