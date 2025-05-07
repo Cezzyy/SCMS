@@ -2,16 +2,13 @@ package handlers
 
 import (
 	"fmt"
-	"html/template"
 	"net/http"
-	"os"
-	"os/exec"
-	"path/filepath"
 	"strconv"
 	"time"
 
 	"github.com/Cezzyy/SCMS/backend/internal/models"
 	"github.com/Cezzyy/SCMS/backend/internal/repository"
+	"github.com/Cezzyy/SCMS/backend/internal/services"
 	"github.com/labstack/echo/v4"
 )
 
@@ -20,14 +17,21 @@ type QuotationHandler struct {
 	quotationRepo *repository.QuotationRepository
 	customerRepo  *repository.CustomerRepository
 	productRepo   *repository.ProductRepository
+	pdfGenerator  *services.PDFGenerator
 }
 
 // NewQuotationHandler creates a new quotation handler with the provided repositories
-func NewQuotationHandler(quotationRepo *repository.QuotationRepository, customerRepo *repository.CustomerRepository, productRepo *repository.ProductRepository) *QuotationHandler {
+func NewQuotationHandler(
+	quotationRepo *repository.QuotationRepository,
+	customerRepo *repository.CustomerRepository,
+	productRepo *repository.ProductRepository,
+	pdfGenerator *services.PDFGenerator,
+) *QuotationHandler {
 	return &QuotationHandler{
 		quotationRepo: quotationRepo,
 		customerRepo:  customerRepo,
 		productRepo:   productRepo,
+		pdfGenerator:  pdfGenerator,
 	}
 }
 
@@ -220,224 +224,23 @@ func (h *QuotationHandler) GenerateQuotationPDF(c echo.Context) error {
 	}
 
 	// Create a data structure for the template
-	templateData := struct {
-		Quotation        models.Quotation
-		Customer         models.Customer
-		ItemsWithProduct []ItemWithProduct
-		GenerationDate   string
-	}{
-		Quotation:        quotation,
-		Customer:         customer,
-		ItemsWithProduct: itemsWithProducts,
-		GenerationDate:   time.Now().Format("January 2, 2006"),
+	templateData := map[string]interface{}{
+		"Quotation":        quotation,
+		"Customer":         customer,
+		"ItemsWithProduct": itemsWithProducts,
+		"GenerationDate":   time.Now().Format("January 2, 2006"),
 	}
 
-	// Create a temporary HTML file
-	htmlTemplate := `
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Quotation #{{.Quotation.QuotationID}}</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            color: #333;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .header h1 {
-            color: #2c3e50;
-            margin-bottom: 5px;
-        }
-        .section {
-            margin-bottom: 20px;
-        }
-        .section h2 {
-            color: #2c3e50;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
-        }
-        .info-block {
-            margin-bottom: 10px;
-        }
-        .info-label {
-            font-weight: bold;
-            display: inline-block;
-            width: 150px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        .total-row {
-            font-weight: bold;
-        }
-        .footer {
-            margin-top: 30px;
-            text-align: center;
-            font-size: 0.8em;
-            color: #777;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>Quotation</h1>
-        <p>Generated on {{.GenerationDate}}</p>
-    </div>
+	// Generate the PDF using our PDF service
+	pdfContent, err := h.pdfGenerator.GenerateFromTemplate(
+		"quotation/template.html", // Template path
+		"quotation.css",           // CSS file name
+		templateData,              // Template data
+	)
 
-    <div class="section">
-        <h2>Quotation Details</h2>
-        <div class="info-block">
-            <span class="info-label">Quotation #:</span>
-            <span>{{.Quotation.QuotationID}}</span>
-        </div>
-        <div class="info-block">
-            <span class="info-label">Date:</span>
-            <span>{{.Quotation.QuoteDate.Format "January 2, 2006"}}</span>
-        </div>
-        <div class="info-block">
-            <span class="info-label">Valid until:</span>
-            <span>{{.Quotation.ValidityDate.Format "January 2, 2006"}}</span>
-        </div>
-        <div class="info-block">
-            <span class="info-label">Status:</span>
-            <span>{{.Quotation.Status}}</span>
-        </div>
-    </div>
-
-    <div class="section">
-        <h2>Customer Information</h2>
-        <div class="info-block">
-            <span class="info-label">Company:</span>
-            <span>{{.Customer.CompanyName}}</span>
-        </div>
-        {{if .Customer.Address}}
-        <div class="info-block">
-            <span class="info-label">Address:</span>
-            <span>{{.Customer.Address}}</span>
-        </div>
-        {{end}}
-        {{if .Customer.Phone}}
-        <div class="info-block">
-            <span class="info-label">Phone:</span>
-            <span>{{.Customer.Phone}}</span>
-        </div>
-        {{end}}
-        {{if .Customer.Email}}
-        <div class="info-block">
-            <span class="info-label">Email:</span>
-            <span>{{.Customer.Email}}</span>
-        </div>
-        {{end}}
-    </div>
-
-    <div class="section">
-        <h2>Items</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Product</th>
-                    <th>Quantity</th>
-                    <th>Unit Price</th>
-                    <th>Discount</th>
-                    <th>Line Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{range .ItemsWithProduct}}
-                <tr>
-                    <td>{{.ProductName}}</td>
-                    <td>{{.Quantity}}</td>
-                    <td>${{printf "%.2f" .UnitPrice}}</td>
-                    <td>${{printf "%.2f" .Discount}}</td>
-                    <td>${{printf "%.2f" .LineTotal}}</td>
-                </tr>
-                {{end}}
-                <tr class="total-row">
-                    <td colspan="4" style="text-align: right;">Total</td>
-                    <td>${{printf "%.2f" .Quotation.TotalAmount}}</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="footer">
-        <p>This is a computer-generated document and does not require a signature.</p>
-    </div>
-</body>
-</html>
-`
-
-	// Create a temporary directory
-	tempDir, err := os.MkdirTemp("", "quotation")
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to create temporary directory",
-		})
-	}
-	defer os.RemoveAll(tempDir)
-
-	// Create the HTML file path
-	htmlFilePath := filepath.Join(tempDir, fmt.Sprintf("quotation_%d.html", quotation.QuotationID))
-
-	// Parse and execute the template
-	tmpl, err := template.New("quotation").Parse(htmlTemplate)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to parse template",
-		})
-	}
-
-	// Create the HTML file
-	htmlFile, err := os.Create(htmlFilePath)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to create HTML file",
-		})
-	}
-	defer htmlFile.Close()
-
-	// Execute the template with data
-	err = tmpl.Execute(htmlFile, templateData)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to execute template",
-		})
-	}
-
-	// Create the PDF file path
-	pdfFilePath := filepath.Join(tempDir, fmt.Sprintf("quotation_%d.pdf", quotation.QuotationID))
-
-	// Execute wkhtmltopdf command
-	cmd := exec.Command("wkhtmltopdf", htmlFilePath, pdfFilePath)
-	err = cmd.Run()
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to generate PDF: " + err.Error(),
-		})
-	}
-
-	// Read the generated PDF
-	pdfContent, err := os.ReadFile(pdfFilePath)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to read generated PDF",
+			"error": fmt.Sprintf("Failed to generate PDF: %v", err),
 		})
 	}
 
