@@ -47,19 +47,19 @@ func main() {
 	}))
 
 	// JWT secret for user authentication
-	jwtSecret := "your-secret-key-here" 
+	// jwtSecret := "your-secret-key-here"
 
 	// Initialize repositories
 	customerRepo := repository.NewCustomerRepository(db)
 	contactRepo := repository.NewContactRepository(db)
-	userRepo := repository.NewUserRepository(db)
+	// userRepo := repository.NewUserRepository(db)
 	productRepo := repository.NewProductRepository(db)
 	inventoryRepo := repository.NewInventoryRepository(db)
 
 	// Initialize handlers
 	customerHandler := handlers.NewCustomerHandler(customerRepo)
 	contactHandler := handlers.NewContactHandler(contactRepo, customerRepo)
-	userHandler := handlers.NewUserHandler(userRepo, jwtSecret)
+	// userHandler := handlers.NewUserHandler(userRepo, jwtSecret)
 	productHandler := handlers.NewProductHandler(productRepo)
 	inventoryHandler := handlers.NewInventoryHandler(inventoryRepo, productRepo)
 
@@ -84,7 +84,7 @@ func main() {
 	})
 
 	// Auth routes - public
-	e.POST("/api/auth/login", userHandler.Login)
+	// e.POST("/api/auth/login", userHandler.Login)
 
 	// User routes - protected
 	// usersGroup := e.Group("/api/users", jwtMiddleware)
@@ -130,7 +130,7 @@ func main() {
 	e.PUT("/api/inventory/:id", inventoryHandler.UpdateInventory)
 	e.PUT("/api/inventory/:id/stock", inventoryHandler.UpdateStock)
 	e.DELETE("/api/inventory/:id", inventoryHandler.DeleteInventory)
-	
+
 	// Low stock routes
 	e.GET("/api/inventory/low-stock", inventoryHandler.GetLowStockItems)
 	e.GET("/api/inventory/low-stock/details", inventoryHandler.GetLowStockWithProductInfo)
