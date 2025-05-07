@@ -55,6 +55,7 @@ func main() {
 	// userRepo := repository.NewUserRepository(db)
 	productRepo := repository.NewProductRepository(db)
 	inventoryRepo := repository.NewInventoryRepository(db)
+	quotationRepo := repository.NewQuotationRepository(db)
 
 	// Initialize handlers
 	customerHandler := handlers.NewCustomerHandler(customerRepo)
@@ -62,6 +63,7 @@ func main() {
 	// userHandler := handlers.NewUserHandler(userRepo, jwtSecret)
 	productHandler := handlers.NewProductHandler(productRepo)
 	inventoryHandler := handlers.NewInventoryHandler(inventoryRepo, productRepo)
+	quotationHandler := handlers.NewQuotationHandler(quotationRepo, customerRepo, productRepo)
 
 	// // JWT middleware for protected routes
 	// jwtMiddleware := middleware.JWTWithConfig(middleware.JWTConfig{
@@ -134,6 +136,12 @@ func main() {
 	// Low stock routes
 	e.GET("/api/inventory/low-stock", inventoryHandler.GetLowStockItems)
 	e.GET("/api/inventory/low-stock/details", inventoryHandler.GetLowStockWithProductInfo)
+
+	// Quotation routes
+	e.GET("/api/quotations", quotationHandler.GetAllQuotations)
+	e.GET("/api/quotations/:id", quotationHandler.GetQuotationByID)
+	e.POST("/api/quotations", quotationHandler.CreateQuotation)
+	e.GET("/api/quotations/:id/pdf", quotationHandler.GenerateQuotationPDF)
 
 	// Start server
 	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
