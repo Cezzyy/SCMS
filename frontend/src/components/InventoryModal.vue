@@ -122,7 +122,7 @@ const isLowStock = computed(() => {
       class="fixed inset-0 z-50 overflow-y-auto">
     <div class="min-h-screen px-4 text-center">
       <div class="fixed inset-0 transition-opacity" @click="closeModal">
-        <div class="absolute inset-0 bg-black opacity-50"></div>
+        <div class="absolute inset-0 bg-black opacity-50 dark:opacity-60"></div>
       </div>
 
       <span class="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
@@ -171,7 +171,7 @@ const isLowStock = computed(() => {
               v-model="inventoryData.product_id"
               @blur="validateField('product_id', inventoryData.product_id)"
               required
-              class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100 sm:text-sm"
               :class="{'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900 dark:bg-opacity-20': errors.product_id && touched.product_id}"
               :disabled="isLoading"
             >
@@ -184,7 +184,7 @@ const isLowStock = computed(() => {
               {{ errors.product_id }}
             </p>
             <p v-else-if="inventoryData.product_id && inventoryData.product_id > 0" class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              Managing inventory for: <span class="font-medium">{{ getProductName(inventoryData.product_id) }}</span>
+              Managing inventory for: <span class="font-medium dark:text-gray-300">{{ getProductName(inventoryData.product_id) }}</span>
             </p>
           </div>
 
@@ -201,7 +201,7 @@ const isLowStock = computed(() => {
                   type="number"
                   min="0"
                   required
-                  class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100 sm:text-sm"
                   :class="{'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900 dark:bg-opacity-20': errors.current_stock && touched.current_stock}"
                   :disabled="isLoading"
                   placeholder="0"
@@ -224,7 +224,7 @@ const isLowStock = computed(() => {
                   type="number"
                   min="0"
                   required
-                  class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100 sm:text-sm"
                   :class="{'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900 dark:bg-opacity-20': errors.reorder_level && touched.reorder_level}"
                   :disabled="isLoading"
                   placeholder="5"
@@ -284,7 +284,7 @@ const isLowStock = computed(() => {
             <button
               type="button"
               @click="closeModal"
-              class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors"
               :disabled="isLoading"
             >
               Cancel
@@ -292,7 +292,7 @@ const isLowStock = computed(() => {
             <button
               type="submit"
               :disabled="isLoading || Object.keys(errors).length > 0"
-              class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 transition-colors"
               :class="{'opacity-75 cursor-not-allowed': isLoading}"
             >
               <span v-if="isLoading" class="flex items-center">

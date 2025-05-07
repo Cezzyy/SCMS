@@ -27,6 +27,7 @@ const isSidebarOpen = ref<boolean>(true) // Default to open
 const isMobile = ref<boolean>(false)
 const activeComponent = ref<string>('dashboard')
 const currentComponent = shallowRef<Component>(DashboardComponent)
+const darkMode = ref(false)
 
 // Check for mobile screen
 const checkScreenSize = (): void => {
@@ -45,10 +46,19 @@ const toggleSidebar = (): void => {
   isSidebarOpen.value = !isSidebarOpen.value
 }
 
+const toggleDarkMode = () => {
+  darkMode.value = !darkMode.value
+  if (darkMode.value) {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
+}
+
 const navigationItems: NavigationItem[] = [
   { id: 'dashboard', name: 'Dashboard', icon: 'home' },
   { id: 'customers', name: 'Customers', icon: 'users' },
-  { id: 'sales', name: 'Sales & Orders', icon: 'clipboard-list' },
+  { id: 'orders', name: 'Orders', icon: 'clipboard-list' },
   { id: 'inventory', name: 'Inventory', icon: 'box' },
   { id: 'quotations', name: 'Quotations', icon: 'file-invoice-dollar' },
   { id: 'reports', name: 'Reports', icon: 'chart-line' },
@@ -58,7 +68,7 @@ const navigationItems: NavigationItem[] = [
 const componentMap: ComponentMap = {
   dashboard: DashboardComponent,
   customers: CustomersComponent,
-  sales: SalesOrdersComponent,
+  orders: SalesOrdersComponent,
   inventory: InventoryComponent,
   quotations: QuotationsComponent,
   reports: ReportsComponent,
@@ -94,7 +104,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-white flex flex-col md:flex-row overflow-hidden">
+  <div :class="['min-h-screen flex flex-col md:flex-row overflow-hidden', darkMode ? 'dark bg-bg-alt dark:bg-gray-900' : 'bg-white']">
     <!-- Overlay for mobile when sidebar is open -->
     <div
       v-if="isMobile && isSidebarOpen"
@@ -105,14 +115,15 @@ onUnmounted(() => {
     <!-- Sidebar -->
     <aside
       :class="[
-        'bg-primary text-text-primary transition-all duration-300 ease-in-out',
+        'flex flex-col bg-primary text-text-primary transition-all duration-300 ease-in-out',
         'z-30 h-screen flex-shrink-0',
         isMobile ? 'fixed left-0 top-0 bottom-0' : 'sticky top-0',
-        isSidebarOpen ? 'translate-x-0 w-64' : isMobile ? '-translate-x-full' : 'w-16'
+        isSidebarOpen ? 'translate-x-0 w-64' : isMobile ? '-translate-x-full' : 'w-16',
+        'dark:bg-gray-900 dark:text-gray-100'
       ]"
     >
       <!-- Sidebar header -->
-      <div class="flex items-center justify-between h-16 px-4 border-b border-accent2">
+      <div class="flex items-center justify-between h-16 px-4 border-b border-accent2 dark:border-gray-800">
         <div v-if="isSidebarOpen" class="flex items-center space-x-2">
           <span class="text-accent1 text-xl font-bold">SCMS</span>
         </div>
@@ -133,7 +144,7 @@ onUnmounted(() => {
           href="#"
           @click.prevent="switchComponent(item.id)"
           :class="[
-            activeComponent === item.id ? 'bg-accent2 text-white' : 'text-text-secondary hover:bg-accent2 hover:bg-opacity-25 hover:text-text-primary',
+            activeComponent === item.id ? 'bg-accent2 text-white dark:bg-gray-800 dark:text-white' : 'text-text-secondary hover:bg-accent2 hover:bg-opacity-25 hover:text-text-primary dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white',
             'flex items-center rounded-md text-sm font-medium transition-colors duration-150',
             isSidebarOpen ? 'px-4 py-3' : 'justify-center px-3 py-3'
           ]"
@@ -144,20 +155,20 @@ onUnmounted(() => {
         </a>
       </nav>
 
-      <!-- User profile and logout -->
-      <div class="border-t border-accent2 p-4">
+      <!-- User profile and logout at the bottom -->
+      <div class="mt-auto border-t border-accent2 dark:border-gray-800 p-4">
         <div :class="[isSidebarOpen ? 'flex items-center justify-between' : 'flex justify-center']">
           <div v-if="isSidebarOpen" class="flex items-center min-w-0">
             <div class="h-8 w-8 rounded-full bg-accent1 flex items-center justify-center text-primary flex-shrink-0">
               <font-awesome-icon icon="user" class="h-4 w-4" />
             </div>
             <div class="ml-3 min-w-0">
-              <p class="text-sm font-medium text-text-primary truncate">Admin User</p>
-              <p class="text-xs text-text-secondary truncate">administrator</p>
+              <p class="text-sm font-medium text-text-primary dark:text-white truncate">Admin User</p>
+              <p class="text-xs text-text-secondary dark:text-gray-400 truncate">administrator</p>
             </div>
           </div>
           <button 
-            class="text-text-secondary hover:text-accent1 transition-colors p-1 flex-shrink-0"
+            class="text-text-secondary hover:text-accent1 transition-colors p-1 flex-shrink-0 dark:text-gray-400 dark:hover:text-accent1"
             aria-label="Logout"
           >
             <font-awesome-icon icon="sign-out-alt" class="h-5 w-5" />
@@ -169,34 +180,38 @@ onUnmounted(() => {
     <!-- Main content -->
     <div class="flex-1 flex flex-col overflow-hidden w-full">
       <!-- Top navbar -->
-      <header class="bg-white shadow-sm z-10">
+      <header class="bg-white dark:bg-gray-900 shadow-sm z-10">
         <div class="px-3 sm:px-4 lg:px-6 py-3 md:py-4 flex items-center justify-between">
           <!-- Mobile menu button -->
           <button 
             @click="toggleSidebar"
-            class="md:hidden text-primary mr-2"
+            class="md:hidden text-primary dark:text-white mr-2"
             aria-label="Menu"
           >
             <font-awesome-icon icon="bars" class="h-5 w-5" />
           </button>
           
-          <h1 class="text-base sm:text-lg md:text-xl font-semibold text-primary truncate">
+          <h1 class="text-base sm:text-lg md:text-xl font-semibold text-primary dark:text-white truncate">
             Sales & Customer Management System
           </h1>
           
           <div class="flex items-center space-x-4">
             <button 
-              class="text-primary hover:text-accent1 transition-colors"
+              class="text-primary hover:text-accent1 transition-colors dark:text-white dark:hover:text-accent1"
               aria-label="Settings"
             >
               <font-awesome-icon icon="cog" class="h-5 w-5" />
+            </button>
+            <!-- Dark mode toggle -->
+            <button @click="toggleDarkMode" :aria-label="darkMode ? 'Switch to light mode' : 'Switch to dark mode'" class="ml-2 text-primary dark:text-white hover:text-accent1 dark:hover:text-accent1 transition-colors">
+              <font-awesome-icon :icon="darkMode ? 'sun' : 'moon'" class="h-5 w-5" />
             </button>
           </div>
         </div>
       </header>
 
       <!-- Page content -->
-      <main class="flex-1 overflow-y-auto overflow-x-hidden bg-bg-alt p-2 sm:p-3 md:p-4 lg:p-6">
+      <main class="flex-1 overflow-y-auto overflow-x-hidden bg-bg-alt dark:bg-gray-900 p-2 sm:p-3 md:p-4 lg:p-6">
         <div class="max-w-full mx-auto w-full">
           <!-- Dynamic component with transition and loading indicator -->
           <transition 

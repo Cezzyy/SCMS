@@ -206,7 +206,7 @@ const isFormValid = computed(() => {
       class="fixed inset-0 z-50 overflow-y-auto">
     <div class="min-h-screen px-4 text-center">
       <div class="fixed inset-0 transition-opacity" @click="closeModal">
-        <div class="absolute inset-0 bg-black opacity-50"></div>
+        <div class="absolute inset-0 bg-black opacity-50 dark:opacity-60"></div>
       </div>
 
       <span class="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
@@ -256,7 +256,7 @@ const isFormValid = computed(() => {
               v-model="productData.product_name"
               @blur="validateField('product_name', productData.product_name)"
               type="text"
-              class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100 sm:text-sm"
               :class="{'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900 dark:bg-opacity-20': errors.product_name && touched.product_name}"
             />
             <p v-if="errors.product_name && touched.product_name" class="mt-2 text-sm text-red-600 dark:text-red-400">
@@ -274,7 +274,7 @@ const isFormValid = computed(() => {
               v-model="productData.model"
               @blur="validateField('model', productData.model)"
               type="text"
-              class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100 sm:text-sm"
               :class="{'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900 dark:bg-opacity-20': errors.model && touched.model}"
             />
             <p v-if="errors.model && touched.model" class="mt-2 text-sm text-red-600 dark:text-red-400">
@@ -290,7 +290,7 @@ const isFormValid = computed(() => {
               </label>
               <div class="mt-1 relative rounded-md shadow-sm">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span class="text-gray-500 sm:text-sm">₱</span>
+                  <span class="text-gray-500 dark:text-gray-400 sm:text-sm">₱</span>
                 </div>
                 <input
                   id="price"
@@ -299,7 +299,7 @@ const isFormValid = computed(() => {
                   type="number"
                   min="0"
                   step="0.01"
-                  class="block w-full px-3 py-2 pl-7 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  class="block w-full px-3 py-2 pl-7 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100 sm:text-sm"
                   :class="{'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900 dark:bg-opacity-20': errors.price && touched.price}"
                 />
               </div>
@@ -318,7 +318,7 @@ const isFormValid = computed(() => {
                 @blur="validateField('warranty_period', productData.warranty_period)"
                 type="number"
                 min="0"
-                class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100 sm:text-sm"
                 :class="{'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900 dark:bg-opacity-20': errors.warranty_period && touched.warranty_period}"
               />
               <p v-if="errors.warranty_period && touched.warranty_period" class="mt-2 text-sm text-red-600 dark:text-red-400">
@@ -337,7 +337,7 @@ const isFormValid = computed(() => {
               v-model="productData.description"
               @blur="validateField('description', productData.description)"
               rows="3"
-              class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100 sm:text-sm"
               :class="{'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900 dark:bg-opacity-20': errors.description && touched.description}"
             ></textarea>
             <p v-if="errors.description && touched.description" class="mt-2 text-sm text-red-600 dark:text-red-400">
@@ -354,7 +354,7 @@ const isFormValid = computed(() => {
               <button
                 type="button"
                 @click="addSpecRow"
-                class="px-2 py-1 text-xs text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                class="px-2 py-1 text-xs text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 transition-colors"
               >
                 Add Specification
               </button>
@@ -366,7 +366,7 @@ const isFormValid = computed(() => {
                 @blur="handleTechnicalSpecsBlur"
                 type="text"
                 placeholder="Key"
-                class="block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                class="block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100 sm:text-sm"
                 :class="{'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900 dark:bg-opacity-20': errors.technical_specs && touched.technical_specs}"
               />
               <input
@@ -374,13 +374,13 @@ const isFormValid = computed(() => {
                 @blur="handleTechnicalSpecsBlur"
                 type="text"
                 placeholder="Value"
-                class="block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                class="block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100 sm:text-sm"
                 :class="{'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900 dark:bg-opacity-20': errors.technical_specs && touched.technical_specs}"
               />
               <button
                 type="button"
                 @click="removeSpecRow(index)"
-                class="text-red-600 hover:text-red-800 focus:outline-none"
+                class="text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-400 focus:outline-none"
                 :disabled="techSpecs.length <= 1"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -405,7 +405,7 @@ const isFormValid = computed(() => {
                 v-model="productData.certifications"
                 @blur="validateField('certifications', productData.certifications)"
                 type="text"
-                class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100 sm:text-sm"
                 :class="{'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900 dark:bg-opacity-20': errors.certifications && touched.certifications}"
               />
               <p v-if="errors.certifications && touched.certifications" class="mt-2 text-sm text-red-600 dark:text-red-400">
@@ -422,7 +422,7 @@ const isFormValid = computed(() => {
                 v-model="productData.safety_standards"
                 @blur="validateField('safety_standards', productData.safety_standards)"
                 type="text"
-                class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100 sm:text-sm"
                 :class="{'border-red-300 dark:border-red-500 bg-red-50 dark:bg-red-900 dark:bg-opacity-20': errors.safety_standards && touched.safety_standards}"
               />
               <p v-if="errors.safety_standards && touched.safety_standards" class="mt-2 text-sm text-red-600 dark:text-red-400">
@@ -436,14 +436,14 @@ const isFormValid = computed(() => {
             <button
               type="button"
               @click="closeModal"
-              class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               :disabled="isLoading"
-              class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 transition-colors"
               :class="{'opacity-75 cursor-not-allowed': isLoading}"
             >
               <span v-if="isLoading" class="flex items-center">
