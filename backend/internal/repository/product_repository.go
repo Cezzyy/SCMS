@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -26,20 +27,35 @@ func NewProductRepository(db *sqlx.DB) *ProductRepository {
 // GetAll retrieves all products from the database
 func (r *ProductRepository) GetAll(ctx context.Context) ([]models.Product, error) {
 	products := []models.Product{}
-	query := `SELECT * FROM products ORDER BY product_name`
+
+	// We don't need the technical_specs::jsonb cast anymore since json.RawMessage handles it
+	query := `
+		SELECT * FROM products ORDER BY product_name
+	`
+
 	err := r.db.SelectContext(ctx, &products, query)
-	return products, err
+	if err != nil {
+		return nil, errors.New("failed to retrieve products: " + err.Error())
+	}
+
+	return products, nil
 }
 
 // GetByID retrieves a product by ID
 func (r *ProductRepository) GetByID(ctx context.Context, id int) (models.Product, error) {
 	var product models.Product
 	query := `SELECT * FROM products WHERE product_id = $1`
+
 	err := r.db.GetContext(ctx, &product, query, id)
 	if err == sql.ErrNoRows {
 		return product, errors.New("product not found")
 	}
-	return product, err
+
+	if err != nil {
+		return product, errors.New("failed to retrieve product: " + err.Error())
+	}
+
+	return product, nil
 }
 
 // Create inserts a new product into the database
@@ -48,12 +64,19 @@ func (r *ProductRepository) Create(ctx context.Context, product *models.Product)
 	product.CreatedAt = now
 	product.UpdatedAt = now
 
+	// Ensure technical_specs is valid JSON for PostgreSQL
+	if product.TechnicalSpecs == nil || len(product.TechnicalSpecs) == 0 {
+		// Initialize with empty JSON object
+		product.TechnicalSpecs = json.RawMessage(`{}`)
+	}
+
+	// Use a placeholder for the JSONB column
 	query := `
 		INSERT INTO products (
 			product_name, model, description, technical_specs, certifications,
 			safety_standards, warranty_period, price, created_at, updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+			$1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10
 		) RETURNING product_id, created_at, updated_at`
 
 	err := r.db.QueryRowContext(
@@ -62,7 +85,7 @@ func (r *ProductRepository) Create(ctx context.Context, product *models.Product)
 		product.ProductName,
 		product.Model,
 		product.Description,
-		product.TechnicalSpecs,
+		product.TechnicalSpecs, // Already a json.RawMessage, no need to marshal
 		product.Certifications,
 		product.SafetyStandards,
 		product.WarrantyPeriod,
@@ -79,21 +102,28 @@ func (r *ProductRepository) Create(ctx context.Context, product *models.Product)
 				return ErrDuplicateKey
 			}
 		}
+		return err
 	}
 
-	return err
+	return nil
 }
 
 // Update updates an existing product
 func (r *ProductRepository) Update(ctx context.Context, product *models.Product) error {
 	product.UpdatedAt = time.Now()
 
+	// Ensure technical_specs is valid JSON for PostgreSQL
+	if product.TechnicalSpecs == nil || len(product.TechnicalSpecs) == 0 {
+		// Initialize with empty JSON object
+		product.TechnicalSpecs = json.RawMessage(`{}`)
+	}
+
 	query := `
 		UPDATE products SET
 			product_name = $1,
 			model = $2,
 			description = $3,
-			technical_specs = $4,
+			technical_specs = $4::jsonb,
 			certifications = $5,
 			safety_standards = $6,
 			warranty_period = $7,
@@ -108,7 +138,7 @@ func (r *ProductRepository) Update(ctx context.Context, product *models.Product)
 		product.ProductName,
 		product.Model,
 		product.Description,
-		product.TechnicalSpecs,
+		product.TechnicalSpecs, // Already a json.RawMessage, no need to marshal
 		product.Certifications,
 		product.SafetyStandards,
 		product.WarrantyPeriod,
@@ -129,9 +159,10 @@ func (r *ProductRepository) Update(ctx context.Context, product *models.Product)
 				return ErrDuplicateKey
 			}
 		}
+		return err
 	}
 
-	return err
+	return nil
 }
 
 // Delete removes a product by ID
@@ -165,8 +196,8 @@ func (r *ProductRepository) SearchProducts(ctx context.Context, term string) ([]
 		SELECT * FROM products 
 		WHERE product_name ILIKE $1 OR description ILIKE $1
 		ORDER BY product_name`
-	
+
 	searchTerm := "%" + term + "%"
 	err := r.db.SelectContext(ctx, &products, query, searchTerm)
 	return products, err
-} 
+}
