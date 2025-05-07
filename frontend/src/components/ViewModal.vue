@@ -133,7 +133,7 @@ const displayText = (value: any, defaultText = 'Not specified'): string => {
       class="fixed inset-0 z-50 overflow-y-auto">
     <div class="min-h-screen px-4 text-center">
       <div class="fixed inset-0 transition-opacity" @click="closeModal">
-        <div class="absolute inset-0 bg-black opacity-50"></div>
+        <div class="absolute inset-0 bg-black opacity-50 dark:opacity-60"></div>
       </div>
 
       <span class="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
@@ -295,7 +295,7 @@ const displayText = (value: any, defaultText = 'Not specified'): string => {
             <button
               type="button"
               @click="updateStock"
-              class="px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+              class="px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors"
             >
               Update Stock
             </button>
@@ -304,7 +304,7 @@ const displayText = (value: any, defaultText = 'Not specified'): string => {
             <button
               type="button"
               @click="editProduct"
-              class="px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+              class="px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors"
             >
               Edit Product
             </button>
@@ -312,7 +312,7 @@ const displayText = (value: any, defaultText = 'Not specified'): string => {
           <button
             type="button"
             @click="closeModal"
-            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors"
           >
             Close
           </button>
