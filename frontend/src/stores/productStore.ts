@@ -70,15 +70,49 @@ export const useProductStore = defineStore('product', {
         this.loading = true;
         this.error = null;
 
-        const response = await apiClient.post<Product>('/api/products', product);
+        // Create a shallow copy to avoid modifying the original object
+        const productToSend = { ...product };
+        
+        // Remove created_at and updated_at fields - let the backend handle these
+        delete productToSend.created_at;
+        delete productToSend.updated_at;
+        
+        // Handle technical_specs - ensure it's directly an object, not a stringified JSON
+        if (!productToSend.technical_specs) {
+          productToSend.technical_specs = {};
+        } else if (typeof productToSend.technical_specs === 'string') {
+          try {
+            // Parse string to object
+            productToSend.technical_specs = JSON.parse(productToSend.technical_specs);
+          } catch (e) {
+            productToSend.technical_specs = {};
+          }
+        }
+        
+        // Remove any undefined fields to prevent sending null values
+        Object.keys(productToSend).forEach(key => {
+          if (productToSend[key as keyof typeof productToSend] === undefined) {
+            delete productToSend[key as keyof typeof productToSend];
+          }
+        });
+        
+        console.log('Sending to backend:', productToSend);
+
+        const response = await apiClient.post<Product>('/api/products', productToSend);
         
         // Add new product to the list
         this.products.push(response.data);
 
         return response.data;
-      } catch (err) {
+      } catch (err: any) {
         this.error = 'Failed to create product';
         console.error(err);
+        
+        // Log the error response data if available
+        if (err.response && err.response.data) {
+          console.error('Backend error details:', err.response.data);
+        }
+        
         throw err;
       } finally {
         this.loading = false;
@@ -93,7 +127,34 @@ export const useProductStore = defineStore('product', {
         this.loading = true;
         this.error = null;
 
-        const response = await apiClient.put<Product>(`/api/products/${product.product_id}`, product);
+        // Create a shallow copy to avoid modifying the original object
+        const productToSend = { ...product };
+        
+        // Remove created_at field - this shouldn't be updated
+        delete productToSend.created_at;
+        
+        // Handle technical_specs - ensure it's directly an object, not a stringified JSON
+        if (!productToSend.technical_specs) {
+          productToSend.technical_specs = {};
+        } else if (typeof productToSend.technical_specs === 'string') {
+          try {
+            // Parse string to object
+            productToSend.technical_specs = JSON.parse(productToSend.technical_specs);
+          } catch (e) {
+            productToSend.technical_specs = {};
+          }
+        }
+        
+        // Remove any undefined fields to prevent sending null values
+        Object.keys(productToSend).forEach(key => {
+          if (productToSend[key as keyof typeof productToSend] === undefined) {
+            delete productToSend[key as keyof typeof productToSend];
+          }
+        });
+        
+        console.log('Sending to backend:', productToSend);
+
+        const response = await apiClient.put<Product>(`/api/products/${productToSend.product_id}`, productToSend);
 
         // Update product in the list
         const index = this.products.findIndex(
@@ -110,9 +171,15 @@ export const useProductStore = defineStore('product', {
         }
 
         return response.data;
-      } catch (err) {
+      } catch (err: any) {
         this.error = 'Failed to update product';
         console.error(err);
+        
+        // Log the error response data if available
+        if (err.response && err.response.data) {
+          console.error('Backend error details:', err.response.data);
+        }
+        
         throw err;
       } finally {
         this.loading = false;
