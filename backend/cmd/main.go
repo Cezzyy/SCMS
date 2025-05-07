@@ -5,10 +5,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/Cezzyy/SCMS/backend/internal/database"
 	"github.com/Cezzyy/SCMS/backend/internal/handlers"
 	"github.com/Cezzyy/SCMS/backend/internal/repository"
+	"github.com/Cezzyy/SCMS/backend/internal/services"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog"
@@ -46,6 +48,24 @@ func main() {
 		ContentSecurityPolicy: "default-src 'self'",
 	}))
 
+	// Initialize PDF generator service
+	baseDir, _ := filepath.Abs(filepath.Join(".", "backend"))
+	templatesDir := filepath.Join(baseDir, "templates")
+	cssDir := filepath.Join(templatesDir, "css")
+
+	// Ensure all template directories exist
+	err = services.EnsureTemplateDirectories(templatesDir, "css", "quotation")
+	if err != nil {
+		log.Printf("Warning: Failed to create template directories: %v", err)
+	}
+
+	// Detect wkhtmltopdf location
+	wkhtmltopdfPath := services.DetectWkhtmltopdfPath()
+	log.Printf("Using wkhtmltopdf from: %s", wkhtmltopdfPath)
+
+	// Create PDF generator service
+	pdfGenerator := services.NewPDFGenerator(templatesDir, cssDir, wkhtmltopdfPath)
+
 	// JWT secret for user authentication
 	// jwtSecret := "your-secret-key-here"
 
@@ -63,7 +83,7 @@ func main() {
 	// userHandler := handlers.NewUserHandler(userRepo, jwtSecret)
 	productHandler := handlers.NewProductHandler(productRepo)
 	inventoryHandler := handlers.NewInventoryHandler(inventoryRepo, productRepo)
-	quotationHandler := handlers.NewQuotationHandler(quotationRepo, customerRepo, productRepo)
+	quotationHandler := handlers.NewQuotationHandler(quotationRepo, customerRepo, productRepo, pdfGenerator)
 
 	// // JWT middleware for protected routes
 	// jwtMiddleware := middleware.JWTWithConfig(middleware.JWTConfig{
