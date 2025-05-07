@@ -14,7 +14,14 @@ import {
   faCog, 
   faSignOutAlt,
   faBox,
-  faFileInvoiceDollar 
+  faFileInvoiceDollar,
+  faPlus,
+  faAddressBook,
+  faSearch,
+  faEdit,
+  faSort,
+  faChevronLeft,
+  faChevronRight 
 } from '@fortawesome/free-solid-svg-icons'
 
 import App from './App.vue'
@@ -35,7 +42,14 @@ library.add(
   faCog, 
   faSignOutAlt,
   faBox,
-  faFileInvoiceDollar
+  faFileInvoiceDollar,
+  faPlus,
+  faAddressBook,
+  faSearch,
+  faEdit,
+  faSort,
+  faChevronLeft,
+  faChevronRight
 )
 
 const app = createApp(App)

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, defineProps, defineEmits, watch, computed } from 'vue';
-import { useCustomerStore } from '@/stores/customerStore';
-import { useContactStore } from '@/stores/contactStore';
-import type { CustomerCreate, CustomerUpdate, Customer } from '@/types/Customer';
-import type { ContactCreate, Contact } from '@/types/Contact';
+import { useCustomerStore } from '../stores/customerStore';
+import { useContactStore } from '../stores/contactStore';
+import type { CustomerCreate, CustomerUpdate, Customer } from '../types/Customer';
+import type { ContactCreate, Contact } from '../types/Contact';
 
 const customerStore = useCustomerStore();
 const contactStore = useContactStore();

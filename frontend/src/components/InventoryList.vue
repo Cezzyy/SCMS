@@ -279,26 +279,26 @@ onMounted(loadData);
 <template>
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
     <!-- Header with tabs and actions -->
-    <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
-      <div>
-        <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-1">Inventory Management</h2>
-        <p class="text-gray-600 dark:text-gray-300 text-sm">Manage products and stock levels efficiently</p>
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
+      <div class="mb-4 md:mb-0">
+        <h2 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-white mb-1">Inventory Management</h2>
+        <p class="text-gray-600 dark:text-gray-300 text-xs md:text-sm">Manage products and stock levels efficiently</p>
       </div>
-      <div class="flex space-x-4">
+      <div class="flex flex-wrap gap-3 sm:gap-4">
         <button
           @click="openProductModal()"
-          class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors duration-200 flex items-center shadow-sm"
+          class="bg-blue-600 text-white px-3 py-2 md:px-4 md:py-2 rounded-md hover:bg-blue-700 transition-colors duration-200 flex items-center shadow-sm text-sm md:text-base"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
           Add Product
         </button>
         <button
           @click="openInventoryModal()"
-          class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors duration-200 flex items-center shadow-sm"
+          class="bg-indigo-600 text-white px-3 py-2 md:px-4 md:py-2 rounded-md hover:bg-indigo-700 transition-colors duration-200 flex items-center shadow-sm text-sm md:text-base"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
           Add Inventory
@@ -307,49 +307,49 @@ onMounted(loadData);
     </div>
 
     <!-- Stats summary cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-900">
-      <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-4 bg-gray-50 dark:bg-gray-900">
+      <div class="bg-white dark:bg-gray-800 p-3 md:p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
         <div class="flex items-center">
-          <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 mr-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="p-2 md:p-3 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 mr-3 md:mr-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
           </div>
           <div>
-            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Products</div>
-            <div class="text-2xl font-semibold text-gray-800 dark:text-white">
+            <div class="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">Total Products</div>
+            <div class="text-lg md:text-2xl font-semibold text-gray-800 dark:text-white">
               {{ productStore.products.length }}
             </div>
           </div>
         </div>
       </div>
 
-      <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+      <div class="bg-white dark:bg-gray-800 p-3 md:p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
         <div class="flex items-center">
-          <div class="p-3 rounded-full bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 mr-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="p-2 md:p-3 rounded-full bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 mr-3 md:mr-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
             </svg>
           </div>
           <div>
-            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Inventory Items</div>
-            <div class="text-2xl font-semibold text-gray-800 dark:text-white">
+            <div class="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">Inventory Items</div>
+            <div class="text-lg md:text-2xl font-semibold text-gray-800 dark:text-white">
               {{ inventoryStore.inventory.length }}
             </div>
           </div>
         </div>
       </div>
 
-      <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+      <div class="bg-white dark:bg-gray-800 p-3 md:p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 sm:col-span-2 md:col-span-1">
         <div class="flex items-center">
-          <div class="p-3 rounded-full bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 mr-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="p-2 md:p-3 rounded-full bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 mr-3 md:mr-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
           <div>
-            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Low Stock Items</div>
-            <div class="text-2xl font-semibold text-gray-800 dark:text-white">
+            <div class="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">Low Stock Items</div>
+            <div class="text-lg md:text-2xl font-semibold text-gray-800 dark:text-white">
               {{ inventoryStore.lowStockItems.length }}
             </div>
           </div>
@@ -361,42 +361,42 @@ onMounted(loadData);
     <div class="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
       <button
         @click="activeTab = 'inventory'"
-        class="px-6 py-3 text-sm font-medium transition-all duration-200 flex items-center border-b-2"
+        class="px-3 py-2 md:px-6 md:py-3 text-xs md:text-sm font-medium transition-all duration-200 flex items-center border-b-2 whitespace-nowrap"
         :class="activeTab === 'inventory'
           ? 'border-blue-600 text-blue-600 dark:border-blue-500 dark:text-blue-400'
           : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
         </svg>
         All Inventory
       </button>
       <button
         @click="activeTab = 'low-stock'"
-        class="px-6 py-3 text-sm font-medium transition-all duration-200 flex items-center border-b-2"
+        class="px-3 py-2 md:px-6 md:py-3 text-xs md:text-sm font-medium transition-all duration-200 flex items-center border-b-2 whitespace-nowrap"
         :class="activeTab === 'low-stock'
           ? 'border-red-600 text-red-600 dark:border-red-500 dark:text-red-400'
           : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
         Low Stock Items
         <span
           v-if="inventoryStore.lowStockItems.length"
-          class="ml-2 bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300 px-2 py-0.5 rounded-full text-xs font-medium"
+          class="ml-1 md:ml-2 bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300 px-1.5 py-0.5 rounded-full text-xs font-medium"
         >
           {{ inventoryStore.lowStockItems.length }}
         </span>
       </button>
       <button
         @click="activeTab = 'products'"
-        class="px-6 py-3 text-sm font-medium transition-all duration-200 flex items-center border-b-2"
+        class="px-3 py-2 md:px-6 md:py-3 text-xs md:text-sm font-medium transition-all duration-200 flex items-center border-b-2 whitespace-nowrap"
         :class="activeTab === 'products'
           ? 'border-indigo-600 text-indigo-600 dark:border-indigo-500 dark:text-indigo-400'
           : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
         Products
@@ -404,10 +404,10 @@ onMounted(loadData);
     </div>
 
     <!-- Enhanced search bar -->
-    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+    <div class="p-3 md:p-4 border-b border-gray-200 dark:border-gray-700">
       <div class="relative">
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <svg class="h-4 w-4 md:h-5 md:w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
           </svg>
         </div>
@@ -415,10 +415,10 @@ onMounted(loadData);
           v-model="searchQuery"
           type="text"
           placeholder="Search by name, model, or description..."
-          class="w-full pl-10 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg
+          class="w-full pl-8 md:pl-10 px-3 md:px-4 py-2 md:py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg
                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
                  transition-all duration-200
-                 dark:bg-gray-700 dark:text-white text-sm"
+                 dark:bg-gray-700 dark:text-white text-xs md:text-sm"
         />
       </div>
     </div>
@@ -479,7 +479,7 @@ onMounted(loadData);
               <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Price
               </th>
-              <th class="px-6 py-3.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              <th class="px-6 py-3.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider sticky right-0 bg-gray-50 dark:bg-gray-700 z-10">
                 Actions
               </th>
             </tr>
@@ -499,7 +499,7 @@ onMounted(loadData);
               <td class="px-6 py-4 whitespace-nowrap">
                 <span class="font-medium text-gray-800 dark:text-gray-200">{{ formatMoney(product.price) }}</span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium sticky right-0 bg-white dark:bg-gray-800 shadow-sticky">
                 <button
                   @click="openViewModal(product, 'product')"
                   class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3 transition-colors duration-200"
@@ -608,7 +608,7 @@ onMounted(loadData);
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Last Restock
               </th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky right-0 bg-gray-50 dark:bg-gray-800 z-10">
                 Actions
               </th>
             </tr>
@@ -642,7 +642,7 @@ onMounted(loadData);
               <td class="px-6 py-4 whitespace-nowrap text-gray-500 dark:text-gray-400">
                 {{ item.last_restock_date ? new Date(item.last_restock_date).toLocaleDateString() : 'Never' }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium sticky right-0 bg-white dark:bg-gray-800 shadow-sticky">
                 <button
                   @click="openViewModal(item, 'inventory')"
                   class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3 transition-colors duration-200"
@@ -746,7 +746,7 @@ onMounted(loadData);
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Price
               </th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky right-0 bg-gray-50 dark:bg-gray-800 z-10">
                 Actions
               </th>
             </tr>
@@ -767,7 +767,7 @@ onMounted(loadData);
               <td class="px-6 py-4 whitespace-nowrap text-gray-500 dark:text-gray-400">
                 {{ formatMoney(item.price) }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium sticky right-0 bg-red-50 dark:bg-red-900 dark:bg-opacity-20 shadow-sticky">
                 <button
                   @click="openViewModal(item, 'inventory')"
                   class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3 transition-colors duration-200"
@@ -864,6 +864,50 @@ onMounted(loadData);
 </template>
 
 <style scoped>
+/* Responsive tweaks */
+@media (max-width: 640px) {
+  /* Enhanced table responsiveness on small screens */
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  th, td {
+    padding: 0.5rem !important;
+  }
+
+  /* Adjust modal sizing */
+  :deep(.modal-content) {
+    width: 95%;
+    max-width: 95vw;
+    margin: 0 auto;
+  }
+  
+  /* Ensure sticky columns stay visible */
+  .sticky {
+    position: sticky;
+    right: 0;
+    z-index: 20;
+  }
+  
+  /* Apply shadow for visual separation */
+  .shadow-sticky {
+    box-shadow: -3px 0 5px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Make sure pagination is responsive */
+@media (max-width: 480px) {
+  :deep(.pagination-item) {
+    margin: 0 0.1rem;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Original styles */
 /* Add fade and pulse animations for better UI */
 @keyframes pulse {
   0%, 100% {
@@ -890,8 +934,8 @@ onMounted(loadData);
 
 /* Improved scrollbars for better UX */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -905,5 +949,10 @@ onMounted(loadData);
 
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+/* Shadow for sticky columns */
+.shadow-sticky {
+  box-shadow: -3px 0 5px rgba(0, 0, 0, 0.1);
 }
 </style>
