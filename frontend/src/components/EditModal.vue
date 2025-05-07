@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, defineProps, defineEmits, watch, computed } from 'vue';
-import { useCustomerStore } from '@/stores/customerStore';
-import { useContactStore } from '@/stores/contactStore';
-import type { CustomerUpdate, Customer } from '@/types/Customer';
-import type { Contact, ContactUpdate } from '@/types/Contact';
+import { useCustomerStore } from '../stores/customerStore';
+import { useContactStore } from '../stores/contactStore';
+import type { CustomerUpdate, Customer } from '../types/Customer';
+import type { Contact, ContactUpdate } from '../types/Contact';
 
 const customerStore = useCustomerStore();
 const contactStore = useContactStore();
@@ -52,13 +52,13 @@ const isCheckingEmail = ref(false);
 // Validation rules
 const validateField = async (field: string, value: string | undefined) => {
   touched.value[field] = true;
-  
+
   // Required field validation
   if (!value) {
     errors.value[field] = `${field.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} is required`;
     return false;
   }
-  
+
   // Email format validation
   if (field === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
     errors.value[field] = 'Please enter a valid email address';
@@ -90,9 +90,9 @@ const validateField = async (field: string, value: string | undefined) => {
 // Handle form submission
 const handleSubmit = async () => {
   if (isLoading.value) return;
-  
+
   isLoading.value = true;
-  
+
   try {
     if (props.mode === 'customer') {
       // Validate all customer fields
@@ -151,7 +151,7 @@ const resetForm = () => {
       phone: ''
     };
   }
-  
+
   errors.value = {};
   touched.value = {};
 };
@@ -192,8 +192,8 @@ watch(() => props.contact, (newContact) => {
 
 // Computed properties for UI state
 const modalTitle = computed(() => {
-  return props.mode === 'customer' 
-    ? 'Edit Company Information' 
+  return props.mode === 'customer'
+    ? 'Edit Company Information'
     : 'Edit Contact Information';
 });
 
@@ -573,4 +573,4 @@ const modalDescription = computed(() => {
   opacity: 1;
   transform: scale(1);
 }
-</style> 
+</style>
