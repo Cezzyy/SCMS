@@ -1,0 +1,163 @@
+/* Center Industrial Supply Corporation - Quotation PDF Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    color: #333;
+    line-height: 1.6;
+}
+
+.company-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #1a4f8a;
+}
+
+.company-logo {
+    max-width: 200px;
+    max-height: 80px;
+}
+
+.company-info {
+    text-align: right;
+    font-size: 0.9em;
+}
+
+.document-title {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.document-title h1 {
+    color: #1a4f8a;
+    margin-bottom: 5px;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.document-meta {
+    color: #777;
+    font-size: 14px;
+}
+
+.parties-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+}
+
+.customer-info, .quotation-info {
+    width: 48%;
+}
+
+.section {
+    margin-bottom: 25px;
+}
+
+.section h2 {
+    color: #1a4f8a;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+    font-size: 18px;
+    margin-bottom: 15px;
+}
+
+.info-block {
+    margin-bottom: 10px;
+}
+
+.info-label {
+    font-weight: bold;
+    display: inline-block;
+    width: 150px;
+    color: #555;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+th {
+    background-color: #1a4f8a;
+    color: white;
+    font-weight: 600;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.item-description {
+    max-width: 300px;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.amount {
+    text-align: right;
+    font-family: 'Courier New', monospace;
+}
+
+.subtotal-row td {
+    border-top: 2px solid #ddd;
+}
+
+.total-row {
+    font-weight: bold;
+    background-color: #e9f0f8;
+}
+
+.total-row td {
+    border-top: 2px solid #1a4f8a;
+    border-bottom: 2px solid #1a4f8a;
+}
+
+.terms-section {
+    margin-top: 40px;
+    font-size: 13px;
+}
+
+.footer {
+    margin-top: 50px;
+    text-align: center;
+    font-size: 12px;
+    color: #555;
+    border-top: 1px solid #1a4f8a;
+    padding-top: 20px;
+}
+
+.signature-area {
+    margin-top: 60px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.signature-box {
+    width: 45%;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+    font-size: 13px;
+}
+
+@media print {
+    body {
+        margin: 0;
+        padding: 15px;
+    }
+    
+    .page-break {
+        page-break-after: always;
+    }
+} 
