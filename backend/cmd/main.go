@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"github.com/Cezzyy/SCMS/backend/internal/database"
 	"github.com/Cezzyy/SCMS/backend/internal/handlers"
@@ -49,9 +48,13 @@ func main() {
 	}))
 
 	// Initialize PDF generator service
-	baseDir, _ := filepath.Abs(filepath.Join(".", "backend"))
-	templatesDir := filepath.Join(baseDir, "templates")
-	cssDir := filepath.Join(templatesDir, "css")
+	// Use absolute paths to avoid inconsistent path resolution
+	templatesDir := "C:\\Users\\Desktop\\SCMS\\backend\\cmd\\templates"
+	cssDir := "C:\\Users\\Desktop\\SCMS\\backend\\cmd\\templates\\css"
+
+	// Log the actual paths for debugging
+	log.Printf("Templates directory (fixed): %s", templatesDir)
+	log.Printf("CSS directory (fixed): %s", cssDir)
 
 	// Ensure all template directories exist
 	err = services.EnsureTemplateDirectories(templatesDir, "css", "quotation")
@@ -60,7 +63,7 @@ func main() {
 	}
 
 	// Detect wkhtmltopdf location
-	wkhtmltopdfPath := services.DetectWkhtmltopdfPath()
+	wkhtmltopdfPath := "C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe"
 	log.Printf("Using wkhtmltopdf from: %s", wkhtmltopdfPath)
 
 	// Create PDF generator service
@@ -162,6 +165,7 @@ func main() {
 	e.GET("/api/quotations/:id", quotationHandler.GetQuotationByID)
 	e.POST("/api/quotations", quotationHandler.CreateQuotation)
 	e.GET("/api/quotations/:id/pdf", quotationHandler.GenerateQuotationPDF)
+	e.POST("/api/quotations/:id/status", quotationHandler.UpdateQuotationStatus)
 
 	// Start server
 	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()

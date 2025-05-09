@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quotation #{{.Quotation.QuotationID}}</title>
+    <style>
+        /* Optimized and enhanced CSS for compact display */
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 10px;
+            color: #2d3748;
+            line-height: 1.4;
+            font-size: 10px;
+            background-color: #fff;
+            display: flex;
+            flex-direction: column;
+            min-height: 97vh;
+        }
+
+        .content-wrapper {
+            flex: 1;
+        }
+
+        .company-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #2c5282;
+        }
+
+        .company-header h2 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+            color: #2c5282;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .company-header p {
+            margin: 2px 0;
+        }
+
+        .company-info {
+            text-align: right;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .quotation-title {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #2c5282;
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        .quotation-date {
+            text-align: center;
+            color: #666;
+            font-size: 10px;
+            margin-bottom: 15px;
+        }
+
+        .parties-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .info-section {
+            width: 48%;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 3px solid #2c5282;
+        }
+
+        .info-section h2 {
+            color: #2c5282;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 3px;
+            font-size: 12px;
+            margin: 0 0 8px 0;
+            font-weight: 600;
+        }
+
+        .info-block {
+            margin-bottom: 4px;
+        }
+
+        .info-label {
+            font-weight: 600;
+            display: inline-block;
+            width: 80px;
+            color: #4a5568;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 5px 0 10px 0;
+            font-size: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .items-table th, 
+        .items-table td {
+            border: 1px solid #e2e8f0;
+            padding: 6px;
+            text-align: left;
+        }
+
+        .items-table th {
+            background-color: #2c5282;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 9px;
+            letter-spacing: 0.5px;
+        }
+
+        .items-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .items-table tr:hover {
+            background-color: #edf2f7;
+        }
+
+        .item-description {
+            max-width: 300px;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .amount {
+            text-align: right;
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        .total-row {
+            font-weight: bold;
+            background-color: #edf2f7 !important;
+        }
+
+        .total-row td {
+            border-top: 2px solid #2c5282;
+            border-bottom: 2px solid #2c5282;
+            padding: 8px 6px;
+        }
+
+        .terms-section {
+            margin-top: 15px;
+            font-size: 9px;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .terms-section h2 {
+            color: #2c5282;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 3px;
+            font-size: 12px;
+            margin: 0 0 8px 0;
+            font-weight: 600;
+        }
+
+        .terms-section ol {
+            margin: 5px 0 0 20px;
+            padding: 0;
+            color: #4a5568;
+        }
+
+        .terms-section li {
+            margin-bottom: 2px;
+        }
+
+        .footer-container {
+            margin-top: auto;
+        }
+
+        .signature-area {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .signature-box {
+            width: 45%;
+            padding-top: 5px;
+            font-size: 9px;
+        }
+
+        .signature-box p {
+            margin: 2px 0;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 9px;
+            color: #666;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 5px;
+        }
+
+        .footer p {
+            margin: 2px 0;
+        }
+
+        @media print {
+            body {
+                margin: 0;
+                padding: 10px;
+                min-height: 99vh; /* Full height for printing */
+            }
+        }
+        
+        /* Include the CSS from the template data as a fallback */
+        {{.CSS}}
+    </style>
+</head>
+<body>
+    <div class="content-wrapper">
+        <div class="company-header">
+            <div>
+                <h2>CENTER INDUSTRIAL SUPPLY CORPORATION</h2>
+                <p>Your Welding and Cutting Solutions Provider</p>
+            </div>
+            <div class="company-info">
+                <p>10 South AA Street, Quezon City</p>
+                <p>Metro Manila, Philippines, 1103</p>
+                <p>Tel: (02) 8373-9651, 3416-8688, 3415-6097</p>
+                <p>Email: info@centerindustrial.com</p>
+            </div>
+        </div>
+
+        <div class="quotation-title">QUOTATION</div>
+        <div class="quotation-date">Generated on {{.GenerationDate}}</div>
+
+        <div class="parties-info">
+            <div class="info-section">
+                <h2>Customer Information</h2>
+                <div class="info-block">
+                    <span class="info-label">Company:</span>
+                    <span>{{.Customer.CompanyName}}</span>
+                </div>
+                {{if .Customer.Address}}
+                <div class="info-block">
+                    <span class="info-label">Address:</span>
+                    <span>{{.Customer.Address}}</span>
+                </div>
+                {{end}}
+                {{if .Customer.Phone}}
+                <div class="info-block">
+                    <span class="info-label">Phone:</span>
+                    <span>{{.Customer.Phone}}</span>
+                </div>
+                {{end}}
+                {{if .Customer.Email}}
+                <div class="info-block">
+                    <span class="info-label">Email:</span>
+                    <span>{{.Customer.Email}}</span>
+                </div>
+                {{end}}
+            </div>
+
+            <div class="info-section">
+                <h2>Quotation Details</h2>
+                <div class="info-block">
+                    <span class="info-label">Quotation #:</span>
+                    <span>CISC-Q-{{.Quotation.QuotationID}}</span>
+                </div>
+                <div class="info-block">
+                    <span class="info-label">Date:</span>
+                    <span>{{.Quotation.QuoteDate.Format "January 2, 2006"}}</span>
+                </div>
+                <div class="info-block">
+                    <span class="info-label">Valid until:</span>
+                    <span>{{.Quotation.ValidityDate.Format "January 2, 2006"}}</span>
+                </div>
+                <div class="info-block">
+                    <span class="info-label">Status:</span>
+                    <span>{{.Quotation.Status}}</span>
+                </div>
+            </div>
+        </div>
+
+        <h2 style="color: #2c5282; font-size: 12px; margin: 15px 0 8px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px;">Items</h2>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 40%;">Product</th>
+                    <th class="text-center">Quantity</th>
+                    <th class="text-right">Unit Price</th>
+                    <th class="text-center">Discount</th>
+                    <th class="text-right">Line Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .ItemsWithProduct}}
+                <tr>
+                    <td class="item-description">{{.ProductName}}</td>
+                    <td class="text-center">{{.Quantity}}</td>
+                    <td class="amount">₱{{formatMoney .UnitPrice}}</td>
+                    <td class="text-center">{{calculateDiscountPercent .Quantity .UnitPrice .Discount}}</td>
+                    <td class="amount">₱{{formatMoney .LineTotal}}</td>
+                </tr>
+                {{end}}
+                <tr class="total-row">
+                    <td colspan="4" class="text-right">Total</td>
+                    <td class="amount">₱{{formatMoney .Quotation.TotalAmount}}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="terms-section">
+            <h2>Terms and Conditions</h2>
+            <ol>
+                <li>This quotation is valid until the date specified above.</li>
+                <li>Prices are in Philippine Peso (₱) and subject to change without notice after the validity period.</li>
+                <li>Delivery timeframes are estimated and subject to availability of stock.</li>
+                <li>Payment terms: 50% advance payment upon order confirmation, 50% prior to delivery or installation.</li>
+                <li>Warranty as per manufacturer's terms and conditions.</li>
+                <li>Installation, training, and technical support services are available upon request.</li>
+                <li>All sales are subject to applicable taxes and duties.</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="footer-container">
+        <div class="signature-area">
+            <div class="signature-box">
+                <p>Authorized Signature</p>
+                <p>_________________________</p>
+                <p>For Center Industrial Supply Corporation</p>
+            </div>
+            <div class="signature-box">
+                <p>Customer Acceptance</p>
+                <p>_________________________</p>
+                <p>{{.Customer.CompanyName}}</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>This quotation is generated by Center Industrial Supply Corporation.</p>
+            <p>For inquiries, contact sales@centerindustrial.com | www.centerindustrial.com</p>
+        </div>
+    </div>
+</body>
+</html> 
