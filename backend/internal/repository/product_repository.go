@@ -65,7 +65,7 @@ func (r *ProductRepository) Create(ctx context.Context, product *models.Product)
 	product.UpdatedAt = now
 
 	// Ensure technical_specs is valid JSON for PostgreSQL
-	if product.TechnicalSpecs == nil || len(product.TechnicalSpecs) == 0 {
+	if len(product.TechnicalSpecs) == 0 {
 		// Initialize with empty JSON object
 		product.TechnicalSpecs = json.RawMessage(`{}`)
 	}
@@ -113,7 +113,7 @@ func (r *ProductRepository) Update(ctx context.Context, product *models.Product)
 	product.UpdatedAt = time.Now()
 
 	// Ensure technical_specs is valid JSON for PostgreSQL
-	if product.TechnicalSpecs == nil || len(product.TechnicalSpecs) == 0 {
+	if len(product.TechnicalSpecs) == 0 {
 		// Initialize with empty JSON object
 		product.TechnicalSpecs = json.RawMessage(`{}`)
 	}
