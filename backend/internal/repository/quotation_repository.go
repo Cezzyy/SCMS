@@ -182,9 +182,9 @@ func (r *QuotationRepository) GetQuotationItems(ctx context.Context, quotationID
 func (r *QuotationRepository) CreateQuotationItem(ctx context.Context, item *models.QuotationItem) error {
 	query := `
 		INSERT INTO quotation_items (
-			quotation_id, product_id, quantity, unit_price, discount, line_total
+			quotation_id, product_id, quantity, unit_price, discount
 		) VALUES (
-			$1, $2, $3, $4, $5, $6
+			$1, $2, $3, $4, $5
 		) RETURNING quotation_item_id`
 
 	err := r.db.QueryRowContext(
@@ -195,7 +195,6 @@ func (r *QuotationRepository) CreateQuotationItem(ctx context.Context, item *mod
 		item.Quantity,
 		item.UnitPrice,
 		item.Discount,
-		item.LineTotal,
 	).Scan(&item.QuotationItemID)
 
 	return err
@@ -209,9 +208,8 @@ func (r *QuotationRepository) UpdateQuotationItem(ctx context.Context, item *mod
 			product_id = $2,
 			quantity = $3,
 			unit_price = $4,
-			discount = $5,
-			line_total = $6
-		WHERE quotation_item_id = $7`
+			discount = $5
+		WHERE quotation_item_id = $6`
 
 	result, err := r.db.ExecContext(
 		ctx,
@@ -221,7 +219,6 @@ func (r *QuotationRepository) UpdateQuotationItem(ctx context.Context, item *mod
 		item.Quantity,
 		item.UnitPrice,
 		item.Discount,
-		item.LineTotal,
 		item.QuotationItemID,
 	)
 	if err != nil {
@@ -320,9 +317,9 @@ func (r *QuotationRepository) CreateQuotationWithItems(ctx context.Context, quot
 	// Then insert all the items
 	itemQuery := `
 		INSERT INTO quotation_items (
-			quotation_id, product_id, quantity, unit_price, discount, line_total
+			quotation_id, product_id, quantity, unit_price, discount
 		) VALUES (
-			$1, $2, $3, $4, $5, $6
+			$1, $2, $3, $4, $5
 		) RETURNING quotation_item_id`
 
 	for i := range items {
@@ -335,7 +332,6 @@ func (r *QuotationRepository) CreateQuotationWithItems(ctx context.Context, quot
 			items[i].Quantity,
 			items[i].UnitPrice,
 			items[i].Discount,
-			items[i].LineTotal,
 		).Scan(&items[i].QuotationItemID)
 
 		if err != nil {
@@ -344,4 +340,31 @@ func (r *QuotationRepository) CreateQuotationWithItems(ctx context.Context, quot
 	}
 
 	return tx.Commit()
+}
+
+// UpdateStatus updates only the status of an existing quotation
+func (r *QuotationRepository) UpdateStatus(ctx context.Context, id int, status string) error {
+	now := time.Now()
+
+	query := `
+		UPDATE quotations SET
+			status = $1,
+			updated_at = $2
+		WHERE quotation_id = $3
+		RETURNING updated_at`
+
+	result := r.db.QueryRowContext(
+		ctx,
+		query,
+		status,
+		now,
+		id,
+	)
+
+	var updatedAt time.Time
+	err := result.Scan(&updatedAt)
+	if err == sql.ErrNoRows {
+		return errors.New("quotation not found")
+	}
+	return err
 }

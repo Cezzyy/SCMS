@@ -17,7 +17,25 @@ api.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // More detailed logging
     console.log(`Request: ${config.method?.toUpperCase()} ${config.url}`, config.data);
+    console.log(`Request headers:`, config.headers);
+    
+    if (config.data) {
+      console.log(`FINAL PAYLOAD being sent to server:`, JSON.stringify(config.data, null, 2));
+      // Check if data has a quotation property
+      if (config.data.quotation) {
+        console.log(`✅ STRUCTURE CHECK: Properly nested with quotation key`);
+        console.log(`✅ customer_id: ${config.data.quotation.customer_id}, type: ${typeof config.data.quotation.customer_id}`);
+      } else {
+        console.log(`❌ STRUCTURE CHECK: Missing nested quotation key, flat object found instead`);
+        if (config.data.customer_id) {
+          console.log(`❌ Flat customer_id: ${config.data.customer_id}, type: ${typeof config.data.customer_id}`);
+        }
+      }
+    }
+    
     return config;
   },
   (error: AxiosError): Promise<AxiosError> => {
