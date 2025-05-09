@@ -1,26 +1,30 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import type { Order } from '../types/Order';
+import { useOrderStore } from '../stores/orderStore';
+import { useCustomerStore } from '../stores/customerStore';
+import { storeToRefs } from 'pinia';
+import ConfirmationModal from './ConfirmationModal.vue';
 import { defineAsyncComponent } from 'vue';
 
 const NewOrderModal = defineAsyncComponent(() => import('./NewOrderModal.vue'));
 const ViewOrderModal = defineAsyncComponent(() => import('./ViewOrderModal.vue'));
+const UpdateStatusModal = defineAsyncComponent(() => import('./UpdateStatusModal.vue'));
+
+// Initialize stores
+const orderStore = useOrderStore();
+const customerStore = useCustomerStore();
+const { orders, loading, error } = storeToRefs(orderStore);
+const { customers } = storeToRefs(customerStore);
 
 // State
-const isLoading = ref(false);
 const searchQuery = ref('');
-const orders = ref<Order[]>([]);
 const orderToView = ref<Order | null>(null);
 const showNewOrderModal = ref(false);
-
-// Sample customer data (replace with API call in real app)
-const customers = ref([
-  { customer_id: 101, name: 'Alice Wonderland' },
-  { customer_id: 102, name: 'Bob The Builder' },
-  { customer_id: 103, name: 'Charlie Brown' },
-  { customer_id: 104, name: 'Diana Prince' },
-  { customer_id: 105, name: 'Edward Scissorhands' }
-]);
+const showConfirmationModal = ref(false);
+const orderToDelete = ref<number | null>(null);
+const showUpdateStatusModal = ref(false);
+const orderToUpdateStatus = ref<Order | null>(null);
 
 // Computed properties for order counts
 const pendingOrdersCount = computed(() => {
@@ -31,93 +35,27 @@ const completedOrdersCount = computed(() => {
   return orders.value.filter(order => order.status === 'Delivered').length;
 });
 
-// Sample Data (replace with API call)
-const sampleOrders: Order[] = [
-  {
-    order_id: 1,
-    customer_id: 101,
-    order_date: '2023-01-15',
-    shipping_address: '123 Wonderland St',
-    status: 'Delivered',
-    total_amount: 150.75,
-    created_at: '2023-01-15T10:30:00',
-    updated_at: '2023-01-15T10:30:00'
-  },
-  {
-    order_id: 2,
-    customer_id: 102,
-    order_date: '2023-02-20',
-    shipping_address: '456 Builder Ave',
-    status: 'Shipped',
-    total_amount: 89.99,
-    created_at: '2023-02-20T14:20:00',
-    updated_at: '2023-02-20T14:20:00'
-  },
-  {
-    order_id: 3,
-    customer_id: 103,
-    order_date: '2023-03-05',
-    shipping_address: '789 Brown Rd',
-    status: 'Pending',
-    total_amount: 220.00,
-    created_at: '2023-03-05T09:15:00',
-    updated_at: '2023-03-05T09:15:00'
-  },
-  {
-    order_id: 4,
-    customer_id: 104,
-    order_date: '2023-03-10',
-    shipping_address: '101 Prince Blvd',
-    status: 'Pending',
-    total_amount: 45.50,
-    created_at: '2023-03-10T16:45:00',
-    updated_at: '2023-03-10T16:45:00'
-  },
-  {
-    order_id: 5,
-    customer_id: 105,
-    order_date: '2023-03-12',
-    shipping_address: '202 Scissorhands Ln',
-    status: 'Cancelled',
-    total_amount: 12.00,
-    created_at: '2023-03-12T11:10:00',
-    updated_at: '2023-03-12T11:10:00'
-  },
-];
-
-// Sample order items data (in a real app, would be fetched from API)
-const sampleOrderItems = [
-  {
-    order_item_id: 1,
-    product_id: 1,
-    product_name: 'Product A',
-    quantity: 2,
-    unit_price: 50.00,
-    discount: 0,
-    line_total: 100.00
-  },
-  {
-    order_item_id: 2,
-    product_id: 2,
-    product_name: 'Product B',
-    quantity: 1,
-    unit_price: 75.00,
-    discount: 10.00,
-    line_total: 65.00
-  }
-];
-
 // Load data function
 const loadOrders = async () => {
-  isLoading.value = true;
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  orders.value = sampleOrders;
-  isLoading.value = false;
+  try {
+    await orderStore.fetchOrders();
+  } catch (err) {
+    console.error('Failed to load orders:', err);
+  }
+};
+
+// Load customers
+const loadCustomers = async () => {
+  try {
+    await customerStore.fetchCustomers();
+  } catch (err) {
+    console.error('Failed to load customers:', err);
+  }
 };
 
 onMounted(() => {
   loadOrders();
+  loadCustomers();
 });
 
 // Filtered orders
@@ -128,7 +66,8 @@ const filteredOrders = computed(() => {
   const query = searchQuery.value.toLowerCase();
   return orders.value.filter(order =>
     order.order_id.toString().includes(query) ||
-    order.customer_id.toString().includes(query)
+    order.customer_id.toString().includes(query) ||
+    getCustomerName(order.customer_id).toLowerCase().includes(query)
   );
 });
 
@@ -151,7 +90,7 @@ const goToPage = (page: number) => {
 
 // Format money (example)
 const formatMoney = (amount: number): string => {
-  return '₱' + amount.toFixed(2);
+  return '₱' + amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
 // Get status class for styling
@@ -169,30 +108,57 @@ const openNewOrder = () => {
   showNewOrderModal.value = true;
 };
 
-const viewOrder = (order: Order) => {
-  orderToView.value = order;
+const viewOrder = async (order: Order) => {
+  try {
+    // Fetch the order with items
+    await orderStore.fetchOrderById(order.order_id);
+    orderToView.value = order;
+  } catch (err) {
+    console.error('Failed to load order details:', err);
+  }
 };
 
 // Event handler for saving a new order
-const handleSaveOrder = (newOrder: Order) => {
-  // In a real app, this would send the order to an API
-  console.log('Saving new order:', newOrder);
-
-  // Add the new order to the list with a generated ID
-  const maxId = Math.max(...orders.value.map(o => o.order_id));
-  const orderWithId = {
-    ...newOrder,
-    order_id: maxId + 1
-  };
-
-  orders.value.push(orderWithId);
-  showNewOrderModal.value = false;
+const handleSaveOrder = async (newOrderData: any) => {
+  try {
+    // The order is already created in the NewOrderModal component
+    // So we just need to refresh the orders list
+    showNewOrderModal.value = false;
+    await loadOrders();
+  } catch (err) {
+    console.error('Failed to save order:', err);
+  }
 };
 
-// Function to get customer name (since we only have customer_id in the Order interface)
+// Function to delete an order
+const deleteOrder = async (orderId: number) => {
+  // Show the confirmation modal instead of using confirm()
+  orderToDelete.value = orderId;
+  showConfirmationModal.value = true;
+};
+
+// Function to handle the actual deletion after confirmation
+const confirmDeleteOrder = async () => {
+  if (!orderToDelete.value) return;
+  
+  try {
+    await orderStore.deleteOrder(orderToDelete.value);
+    // If the deleted order was being viewed, close the modal
+    if (orderToView.value?.order_id === orderToDelete.value) {
+      orderToView.value = null;
+    }
+  } catch (err) {
+    console.error('Failed to delete order:', err);
+  } finally {
+    // Reset the state
+    orderToDelete.value = null;
+  }
+};
+
+// Function to get customer name from the customers store
 const getCustomerName = (customerId: number): string => {
   const customer = customers.value.find(c => c.customer_id === customerId);
-  return customer ? customer.name : `Customer ${customerId}`;
+  return customer ? customer.company_name : `Customer ${customerId}`;
 };
 
 // Format date from ISO string to readable format
@@ -200,8 +166,33 @@ const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 };
-</script>
 
+// Function to open the update status modal
+const openUpdateStatusModal = (order: Order) => {
+  orderToUpdateStatus.value = order;
+  showUpdateStatusModal.value = true;
+};
+
+// Handle status update from the modal
+const handleStatusUpdate = async ({ orderId, status }: { orderId: number, status: string }) => {
+  try {
+    await orderStore.updateOrderStatus(orderId, status as 'Pending' | 'Shipped' | 'Delivered' | 'Cancelled');
+    
+    // If the updated order is currently being viewed, fetch it again to update the UI
+    if (orderToView.value?.order_id === orderId) {
+      await orderStore.fetchOrderById(orderId);
+    }
+  } catch (err: any) {
+    console.error('Failed to update order status:', err);
+    
+    // If the error contains a specific message from our backend validation
+    const errorMessage = err.response?.data?.error || 'Failed to update order status';
+    
+    // Show error message to user
+    alert(errorMessage);
+  }
+};
+</script>
 
 <template>
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
@@ -236,7 +227,7 @@ const formatDate = (dateString: string): string => {
           <div>
             <div class="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">Total Orders</div>
             <div class="text-lg md:text-2xl font-semibold text-gray-800 dark:text-white">
-              {{ orders.length }} <!-- Placeholder, update with actual data -->
+              {{ orders.length }}
             </div>
           </div>
         </div>
@@ -252,7 +243,7 @@ const formatDate = (dateString: string): string => {
           <div>
             <div class="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">Pending Orders</div>
             <div class="text-lg md:text-2xl font-semibold text-gray-800 dark:text-white">
-              {{ pendingOrdersCount }} <!-- Placeholder, update with actual data -->
+              {{ pendingOrdersCount }}
             </div>
           </div>
         </div>
@@ -268,7 +259,7 @@ const formatDate = (dateString: string): string => {
           <div>
             <div class="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">Completed Orders</div>
             <div class="text-lg md:text-2xl font-semibold text-gray-800 dark:text-white">
-              {{ completedOrdersCount }} <!-- Placeholder, update with actual data -->
+              {{ completedOrdersCount }}
             </div>
           </div>
         </div>
@@ -293,12 +284,26 @@ const formatDate = (dateString: string): string => {
     </div>
 
     <!-- Loading Indicator -->
-    <div v-if="isLoading" class="flex justify-center items-center p-12">
+    <div v-if="loading" class="flex justify-center items-center p-12">
       <div class="relative">
         <div class="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-600"></div>
         <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 dark:border-blue-500 absolute top-0 left-0"></div>
       </div>
       <div class="ml-4 text-gray-600 dark:text-gray-300 text-sm font-medium">Loading orders...</div>
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="error" class="flex flex-col items-center justify-center py-12 rounded-lg bg-red-50 dark:bg-red-900 dark:bg-opacity-20 m-4">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-red-500 dark:text-red-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+      <p class="text-red-800 dark:text-red-200 font-medium mb-2">Failed to load orders</p>
+      <p class="text-red-600 dark:text-red-300 text-sm mb-4">{{ error }}</p>
+      <button
+        @click="loadOrders"
+        class="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors duration-200">
+        Retry
+      </button>
     </div>
 
     <!-- Orders Table -->
@@ -357,12 +362,26 @@ const formatDate = (dateString: string): string => {
               {{ formatMoney(order.total_amount) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium sticky right-0 bg-white dark:bg-gray-800 z-10">
-              <button
-                @click="viewOrder(order)"
-                class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-200 transition-colors duration-200"
-              >
-                View
-              </button>
+              <div class="flex justify-end space-x-3">
+                <button
+                  @click="viewOrder(order)"
+                  class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-200 transition-colors duration-200"
+                >
+                  View
+                </button>
+                <button
+                  @click="openUpdateStatusModal(order)"
+                  class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-200 transition-colors duration-200"
+                >
+                  Update Status
+                </button>
+                <button
+                  @click="deleteOrder(order.order_id)"
+                  class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-200 transition-colors duration-200"
+                >
+                  Delete
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -419,8 +438,22 @@ const formatDate = (dateString: string): string => {
       v-if="orderToView"
       :show="!!orderToView"
       :order="orderToView"
-      :order-items="sampleOrderItems"
+      :order-items="orderStore.currentOrder?.items || []"
       @update:show="(val) => { if (!val) orderToView = null }"
+    />
+
+    <ConfirmationModal
+      v-model:show="showConfirmationModal"
+      title="Delete Order"
+      message="Are you sure you want to delete this order? This action cannot be undone."
+      confirmButtonText="Delete"
+      @confirm="confirmDeleteOrder"
+    />
+
+    <UpdateStatusModal
+      v-model:show="showUpdateStatusModal"
+      :order="orderToUpdateStatus"
+      @update="handleStatusUpdate"
     />
 
   </div>

@@ -10,6 +10,9 @@ interface OrderWithItems {
 export interface OrderCreate {
   order: Omit<Order, 'order_id' | 'created_at' | 'updated_at'>;
   items: Omit<OrderItem, 'order_item_id' | 'order_id'>[];
+  quotation?: {
+    quotation_id: number;
+  };
 }
 
 export interface OrderUpdate {
@@ -89,6 +92,15 @@ export const useOrderStore = defineStore('order', {
         this.loading = true;
         this.error = null;
 
+        console.log('Creating order with data:', JSON.stringify(orderData, null, 2));
+        
+        // Check if the API structure is correct
+        if (orderData.quotation) {
+          console.log('✅ Sending quotation-based order with nested quotation structure');
+        } else if (orderData.order.quotation_id) {
+          console.log('✅ Sending standard order with quotation_id in order object');
+        }
+
         const response = await apiClient.post<OrderWithItems>('/api/orders', orderData);
 
         // Add new order to the list
@@ -131,6 +143,53 @@ export const useOrderStore = defineStore('order', {
         return response.data;
       } catch (err) {
         this.error = 'Failed to update order';
+        console.error(err);
+        throw err;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    /**
+     * Update just the status of an order
+     */
+    async updateOrderStatus(orderId: number, status: 'Pending' | 'Shipped' | 'Delivered' | 'Cancelled') {
+      try {
+        this.loading = true;
+        this.error = null;
+
+        // Get the existing order to keep all other fields
+        const existingOrder = this.getOrderById(orderId);
+        if (!existingOrder) {
+          throw new Error('Order not found');
+        }
+
+        // Create update payload with just the status change
+        const updatePayload = {
+          status
+        };
+
+        const response = await apiClient.post<Order>(`/api/orders/${orderId}/status`, updatePayload);
+
+        // Update order in the list
+        const index = this.orders.findIndex(o => o.order_id === orderId);
+        if (index !== -1) {
+          this.orders[index] = response.data;
+        }
+
+        // Update current order if it's the one being edited
+        if (this.currentOrder?.order.order_id === orderId) {
+          this.currentOrder.order = response.data;
+        }
+
+        return response.data;
+      } catch (err: any) {
+        // Set a more specific error message if available from the response
+        if (err.response?.data?.error) {
+          this.error = err.response.data.error;
+        } else {
+          this.error = 'Failed to update order status';
+        }
         console.error(err);
         throw err;
       } finally {
