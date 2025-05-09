@@ -1,22 +1,47 @@
 <script setup lang="ts">
-import { defineProps, defineEmits, ref, computed } from 'vue';
-import type { Order } from '../types/Order';
+import { defineProps, defineEmits, ref, computed, onMounted } from 'vue';
+import type { Order, OrderItem } from '../types/Order';
+import { useOrderStore } from '../stores/orderStore';
+import { useCustomerStore } from '../stores/customerStore';
+import { useQuotationStore } from '../stores/quotationStore';
+import { storeToRefs } from 'pinia';
+
+const orderStore = useOrderStore();
+const customerStore = useCustomerStore();
+const quotationStore = useQuotationStore();
+
+// Get reactive references to store states
+const { customers } = storeToRefs(customerStore);
+const { quotations } = storeToRefs(quotationStore);
+
+interface ExtendedOrderItem extends OrderItem {
+  product_name?: string;
+}
 
 const props = defineProps<{
   show: boolean;
   order: Order | null;
-  orderItems?: {
-    order_item_id: number;
-    product_id: number;
-    product_name: string;
-    quantity: number;
-    unit_price: number;
-    discount: number;
-    line_total: number;
-  }[];
+  orderItems?: ExtendedOrderItem[];
 }>();
 
 const emit = defineEmits(['update:show']);
+
+// Load customer data if not already loaded
+onMounted(async () => {
+  try {
+    // Load customers if not already loaded
+    if (customers.value.length === 0) {
+      await customerStore.fetchCustomers();
+    }
+    
+    // If order has a quotation ID, load it
+    if (props.order?.quotation_id && quotations.value.length === 0) {
+      await quotationStore.fetchQuotations();
+    }
+  } catch (error) {
+    console.error('Error loading related data:', error);
+  }
+});
 
 // Close modal
 const closeModal = () => {
@@ -52,7 +77,24 @@ const getStatusClass = (status: string) => {
   }
 };
 
-// Calculate summary data for items
+// Format percentage for display
+const formatPercentage = (percentage: number): string => {
+  return `${percentage.toFixed(2)}%`;
+};
+
+// Calculate the actual discount amount based on percentage
+const calculateDiscountAmount = (item: ExtendedOrderItem): number => {
+  return (item.unit_price * item.quantity * item.discount) / 100;
+};
+
+// Calculate the final line total after percentage discount is applied
+const calculateLineTotal = (item: ExtendedOrderItem): number => {
+  const subtotal = item.unit_price * item.quantity;
+  const discountAmount = calculateDiscountAmount(item);
+  return subtotal - discountAmount;
+};
+
+// Calculate summary data for items with percentage-based discounts
 const orderSummary = computed(() => {
   if (!props.orderItems || props.orderItems.length === 0) {
     return {
@@ -65,7 +107,8 @@ const orderSummary = computed(() => {
 
   const totalItems = props.orderItems.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = props.orderItems.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
-  const totalDiscount = props.orderItems.reduce((sum, item) => sum + item.discount, 0);
+  // Calculate total discount as a sum of individual discount amounts (percentage applied to each line)
+  const totalDiscount = props.orderItems.reduce((sum, item) => sum + calculateDiscountAmount(item), 0);
 
   return {
     totalItems,
@@ -75,19 +118,27 @@ const orderSummary = computed(() => {
   };
 });
 
-// Get customer name (in a real app, this would fetch from API)
-const getCustomerName = (customerId: number): string => {
-  // This would normally fetch from a customer service or API
-  // For now we'll use a mock mapping
-  const customerMap: Record<number, string> = {
-    101: 'Alice Wonderland',
-    102: 'Bob The Builder',
-    103: 'Charlie Brown',
-    104: 'Diana Prince',
-    105: 'Edward Scissorhands'
-  };
+// Get customer data from customers store
+const customer = computed(() => {
+  if (!props.order) return null;
+  return customers.value.find(c => c.customer_id === props.order?.customer_id) || null;
+});
 
-  return customerMap[customerId] || `Customer ${customerId}`;
+// Get quotation data if this order is based on a quotation
+const quotation = computed(() => {
+  if (!props.order?.quotation_id) return null;
+  return quotations.value.find(q => q.quotation_id === props.order?.quotation_id) || null;
+});
+
+// Get customer name from customer info
+const getCustomerName = (customerId: number): string => {
+  const foundCustomer = customers.value.find(c => c.customer_id === customerId);
+  return foundCustomer ? foundCustomer.company_name : `Customer ${customerId}`;
+};
+
+// Get product name or use placeholder
+const getProductName = (item: ExtendedOrderItem): string => {
+  return item.product_name || `Product ID: ${item.product_id}`;
 };
 </script>
 
@@ -113,6 +164,9 @@ const getCustomerName = (customerId: number): string => {
             </h3>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Order #ORD{{ order.order_id.toString().padStart(3, '0') }}
+              <span v-if="order.quotation_id" class="ml-2">
+                (From Quotation #QT{{ order.quotation_id.toString().padStart(3, '0') }})
+              </span>
             </p>
           </div>
           <button @click="closeModal" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none">
@@ -159,6 +213,14 @@ const getCustomerName = (customerId: number): string => {
                 <span class="text-gray-500 dark:text-gray-400 text-sm">Name:</span>
                 <span class="text-gray-800 dark:text-gray-200 text-sm font-medium">{{ getCustomerName(order.customer_id) }}</span>
               </div>
+              <div class="flex justify-between" v-if="customer?.phone">
+                <span class="text-gray-500 dark:text-gray-400 text-sm">Phone:</span>
+                <span class="text-gray-800 dark:text-gray-200 text-sm">{{ customer.phone }}</span>
+              </div>
+              <div class="flex justify-between" v-if="customer?.email">
+                <span class="text-gray-500 dark:text-gray-400 text-sm">Email:</span>
+                <span class="text-gray-800 dark:text-gray-200 text-sm">{{ customer.email }}</span>
+              </div>
             </div>
           </div>
 
@@ -188,14 +250,14 @@ const getCustomerName = (customerId: number): string => {
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Product</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Quantity</th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unit Price</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Discount</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Discount (%)</th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</th>
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               <tr v-for="item in orderItems" :key="item.order_item_id">
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200">
-                  {{ item.product_name }}
+                  {{ getProductName(item) }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200">
                   {{ item.quantity }}
@@ -204,10 +266,13 @@ const getCustomerName = (customerId: number): string => {
                   {{ formatMoney(item.unit_price) }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
-                  {{ formatMoney(item.discount) }}
+                  {{ formatPercentage(item.discount) }}
+                  <span class="text-xs text-gray-500 dark:text-gray-400">
+                    ({{ formatMoney(calculateDiscountAmount(item)) }})
+                  </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right font-medium">
-                  {{ formatMoney(item.line_total) }}
+                  {{ formatMoney(calculateLineTotal(item)) }}
                 </td>
               </tr>
             </tbody>
@@ -225,7 +290,9 @@ const getCustomerName = (customerId: number): string => {
                 </td>
               </tr>
               <tr>
-                <td colspan="2" class="px-6 py-3"></td>
+                <td colspan="2" class="px-6 py-3 text-xs text-gray-500 dark:text-gray-400">
+                  Discounts applied as percentages on each line
+                </td>
                 <td colspan="2" class="px-6 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300">
                   Total Discount:
                 </td>
@@ -337,7 +404,6 @@ const getCustomerName = (customerId: number): string => {
           >
             Close
           </button>
-          <!-- Additional buttons like print or edit could go here -->
         </div>
       </div>
     </div>
