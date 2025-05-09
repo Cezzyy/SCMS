@@ -19,8 +19,13 @@ export interface QuotationItem {
   line_total: number;
 }
 
-export interface QuotationCreate extends Omit<Quotation, 'quotation_id' | 'created_at' | 'updated_at'> {
+export interface QuotationCreate {
   quotation_id?: number;
+  customer_id: number;
+  quote_date: string;
+  validity_date: string;
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Expired';
+  total_amount: number;
   items: Omit<QuotationItem, 'quotation_item_id' | 'quotation_id'>[];
 }
 
