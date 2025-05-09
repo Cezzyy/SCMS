@@ -80,6 +80,7 @@ func main() {
 	inventoryRepo := repository.NewInventoryRepository(db)
 	quotationRepo := repository.NewQuotationRepository(db)
 	orderRepo := repository.NewOrderRepository(db)
+	reportRepo := repository.NewReportRepository(db)
 
 	// Initialize handlers
 	customerHandler := handlers.NewCustomerHandler(customerRepo)
@@ -89,6 +90,7 @@ func main() {
 	inventoryHandler := handlers.NewInventoryHandler(inventoryRepo, productRepo)
 	quotationHandler := handlers.NewQuotationHandler(quotationRepo, customerRepo, productRepo, pdfGenerator)
 	orderHandler := handlers.NewOrderHandler(orderRepo)
+	reportHandler := handlers.NewReportHandler(reportRepo)
 
 	// // JWT middleware for protected routes
 	// jwtMiddleware := middleware.JWTWithConfig(middleware.JWTConfig{
@@ -176,6 +178,12 @@ func main() {
 	e.PUT("/api/orders/:id", orderHandler.UpdateOrder)
 	e.DELETE("/api/orders/:id", orderHandler.DeleteOrder)
 	e.POST("/api/orders/:id/status", orderHandler.UpdateOrderStatus)
+
+	// Dashboard & Report routes
+	e.GET("/api/dashboard", reportHandler.GetDashboardSummary)
+	e.GET("/api/reports/sales-trends", reportHandler.GetSalesTrends)
+	e.GET("/api/reports/low-stock", reportHandler.GetLowStockItems)
+	e.GET("/api/reports/top-customers", reportHandler.GetTopCustomers)
 
 	// Start server
 	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
