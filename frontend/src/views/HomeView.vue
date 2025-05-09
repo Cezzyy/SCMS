@@ -8,8 +8,6 @@ const CustomersComponent = defineAsyncComponent(() => import('../components/Cust
 const SalesOrdersComponent = defineAsyncComponent(() => import('../components/OrderList.vue'))
 const InventoryComponent = defineAsyncComponent(() => import('../components/InventoryList.vue'))
 const QuotationsComponent = defineAsyncComponent(() => import('../components/QuotationList.vue'))
-const ReportsComponent = defineAsyncComponent(() => import('../components/ReportsPage.vue'))
-const SettingsComponent = defineAsyncComponent(() => import('../components/SettingsArea.vue'))
 
 // Types
 interface NavigationItem {
@@ -23,7 +21,7 @@ type ComponentMap = {
 }
 
 // State
-const isSidebarOpen = ref<boolean>(true) // Default to open 
+const isSidebarOpen = ref<boolean>(true) // Default to open
 const isMobile = ref<boolean>(false)
 const activeComponent = ref<string>('dashboard')
 const currentComponent = shallowRef<Component>(DashboardComponent)
@@ -61,8 +59,6 @@ const navigationItems: NavigationItem[] = [
   { id: 'orders', name: 'Orders', icon: 'clipboard-list' },
   { id: 'inventory', name: 'Inventory', icon: 'box' },
   { id: 'quotations', name: 'Quotations', icon: 'file-invoice-dollar' },
-  { id: 'reports', name: 'Reports', icon: 'chart-line' },
-  { id: 'settings', name: 'Settings', icon: 'cog' },
 ]
 
 const componentMap: ComponentMap = {
@@ -71,8 +67,6 @@ const componentMap: ComponentMap = {
   orders: SalesOrdersComponent,
   inventory: InventoryComponent,
   quotations: QuotationsComponent,
-  reports: ReportsComponent,
-  settings: SettingsComponent
 }
 
 const switchComponent = (componentId: string): void => {
@@ -80,7 +74,7 @@ const switchComponent = (componentId: string): void => {
   if (isMobile.value) {
     isSidebarOpen.value = false
   }
-  
+
   activeComponent.value = componentId
   currentComponent.value = componentMap[componentId]
 }
@@ -92,7 +86,7 @@ onBeforeMount(() => {
 onMounted(() => {
   // Set initial component
   currentComponent.value = componentMap[activeComponent.value]
-  
+
   // Add window resize listener
   window.addEventListener('resize', checkScreenSize)
 })
@@ -111,7 +105,7 @@ onUnmounted(() => {
       @click="toggleSidebar"
       class="fixed inset-0 bg-black bg-opacity-50 z-20"
     ></div>
-    
+
     <!-- Sidebar -->
     <aside
       :class="[
@@ -127,8 +121,8 @@ onUnmounted(() => {
         <div v-if="isSidebarOpen" class="flex items-center space-x-2">
           <span class="text-accent1 text-xl font-bold">SCMS</span>
         </div>
-        <button 
-          @click="toggleSidebar" 
+        <button
+          @click="toggleSidebar"
           class="text-text-primary hover:text-accent1 transition-colors p-2"
           aria-label="Toggle sidebar"
         >
@@ -138,9 +132,9 @@ onUnmounted(() => {
 
       <!-- Navigation -->
       <nav class="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-        <a 
-          v-for="item in navigationItems" 
-          :key="item.id" 
+        <a
+          v-for="item in navigationItems"
+          :key="item.id"
           href="#"
           @click.prevent="switchComponent(item.id)"
           :class="[
@@ -167,7 +161,7 @@ onUnmounted(() => {
               <p class="text-xs text-text-secondary dark:text-gray-400 truncate">administrator</p>
             </div>
           </div>
-          <button 
+          <button
             class="text-text-secondary hover:text-accent1 transition-colors p-1 flex-shrink-0 dark:text-gray-400 dark:hover:text-accent1"
             aria-label="Logout"
           >
@@ -183,29 +177,20 @@ onUnmounted(() => {
       <header class="sticky top-0 bg-white dark:bg-gray-900 shadow-sm z-10">
         <div class="px-3 sm:px-4 lg:px-6 py-3 md:py-4 flex items-center justify-between">
           <!-- Mobile menu button -->
-          <button 
+          <button
             @click="toggleSidebar"
             class="md:hidden text-primary dark:text-white mr-2"
             aria-label="Menu"
           >
             <font-awesome-icon icon="bars" class="h-5 w-5" />
           </button>
-          
+
           <h1 class="text-base sm:text-lg md:text-xl font-semibold text-primary dark:text-white truncate">
             Sales & Customer Management System
           </h1>
-          
+
           <div class="flex items-center space-x-4">
-            <button 
-              class="text-primary hover:text-accent1 transition-colors dark:text-white dark:hover:text-accent1"
-              aria-label="Settings"
-            >
-              <font-awesome-icon icon="cog" class="h-5 w-5" />
-            </button>
-            <!-- Dark mode toggle -->
-            <button @click="toggleDarkMode" :aria-label="darkMode ? 'Switch to light mode' : 'Switch to dark mode'" class="ml-2 text-primary dark:text-white hover:text-accent1 dark:hover:text-accent1 transition-colors">
-              <font-awesome-icon :icon="darkMode ? 'sun' : 'moon'" class="h-5 w-5" />
-            </button>
+            <!-- Placeholder div to maintain flex layout -->
           </div>
         </div>
       </header>
@@ -214,8 +199,8 @@ onUnmounted(() => {
       <main class="flex-1 bg-bg-alt dark:bg-gray-900 p-2 sm:p-3 md:p-4 lg:p-6">
         <div class="max-w-full mx-auto w-full">
           <!-- Dynamic component with transition and loading indicator -->
-          <transition 
-            name="component-fade" 
+          <transition
+            name="component-fade"
             mode="out-in"
           >
             <div v-if="!currentComponent" class="flex justify-center items-center py-12">
@@ -257,7 +242,7 @@ aside {
   .component-fade-leave-active {
     transition: opacity 0.2s ease;
   }
-  
+
   .component-fade-enter-from,
   .component-fade-leave-to {
     transform: none;
