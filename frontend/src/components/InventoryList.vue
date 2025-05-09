@@ -2,8 +2,10 @@
 import { ref, onMounted, computed, defineAsyncComponent, watch } from 'vue';
 import { useProductStore } from '../stores/productStore';
 import { useInventoryStore } from '../stores/inventoryStore';
+import { storeToRefs } from 'pinia';
 import type { Product } from '../types/Product';
 import type { Inventory, LowStockItem, StockUpdate } from '../types/Inventory';
+import ConfirmationModal from './ConfirmationModal.vue';
 
 const ProductModal = defineAsyncComponent(() => import('../components/ProductModal.vue'));
 const InventoryModal = defineAsyncComponent(() => import('../components/InventoryModal.vue'));
@@ -29,6 +31,12 @@ const searchQuery = ref('');
 // Pagination
 const currentPage = ref(1);
 const itemsPerPage = 10;
+
+// Add state for confirmation modals
+const showDeleteProductConfirmation = ref(false);
+const showDeleteInventoryConfirmation = ref(false);
+const productToDelete = ref<number | null>(null);
+const inventoryToDelete = ref<number | null>(null);
 
 // Combined data for display
 const inventoryWithProducts = computed(() => {
@@ -244,24 +252,40 @@ const updateStockLevel = async (inventoryId: number, newStock: number) => {
 };
 
 const deleteProduct = async (productId: number) => {
-  if (!confirm('Are you sure you want to delete this product?')) return;
+  // Show confirmation modal instead of using confirm()
+  productToDelete.value = productId;
+  showDeleteProductConfirmation.value = true;
+};
 
+const confirmDeleteProduct = async () => {
+  if (!productToDelete.value) return;
+  
   try {
-    await productStore.deleteProduct(productId);
+    await productStore.deleteProduct(productToDelete.value);
     await loadData();
   } catch (error) {
     console.error('Error deleting product:', error);
+  } finally {
+    productToDelete.value = null;
   }
 };
 
 const deleteInventory = async (inventoryId: number) => {
-  if (!confirm('Are you sure you want to delete this inventory item?')) return;
+  // Show confirmation modal instead of using confirm()
+  inventoryToDelete.value = inventoryId;
+  showDeleteInventoryConfirmation.value = true;
+};
 
+const confirmDeleteInventory = async () => {
+  if (!inventoryToDelete.value) return;
+  
   try {
-    await inventoryStore.deleteInventory(inventoryId);
+    await inventoryStore.deleteInventory(inventoryToDelete.value);
     await loadData();
   } catch (error) {
     console.error('Error deleting inventory:', error);
+  } finally {
+    inventoryToDelete.value = null;
   }
 };
 
@@ -835,16 +859,17 @@ onMounted(loadData);
 
     <!-- Product Modal Component -->
     <ProductModal
+      v-if="showProductModal"
       :show="showProductModal"
-      @update:show="showProductModal = $event"
       :product="productToEdit"
+      @update:show="showProductModal = $event"
       @save="saveProduct"
     />
 
     <!-- Inventory Modal Component -->
     <InventoryModal
+      v-if="showInventoryModal"
       :show="showInventoryModal"
-      @update:show="showInventoryModal = $event"
       :inventory="inventoryToEdit"
       :products="productStore.products"
       :existingInventory="inventoryStore.inventory"
@@ -859,6 +884,23 @@ onMounted(loadData);
       :type="viewModalType"
       @edit-product="openProductModal"
       @update-stock="openUpdateStockModal"
+    />
+
+    <!-- Confirmation Modals -->
+    <ConfirmationModal
+      v-model:show="showDeleteProductConfirmation"
+      title="Delete Product"
+      message="Are you sure you want to delete this product? This action cannot be undone."
+      confirmButtonText="Delete"
+      @confirm="confirmDeleteProduct"
+    />
+
+    <ConfirmationModal
+      v-model:show="showDeleteInventoryConfirmation"
+      title="Delete Inventory Item"
+      message="Are you sure you want to delete this inventory item? This action cannot be undone."
+      confirmButtonText="Delete"
+      @confirm="confirmDeleteInventory"
     />
   </div>
 </template>
