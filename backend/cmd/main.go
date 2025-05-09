@@ -79,6 +79,7 @@ func main() {
 	productRepo := repository.NewProductRepository(db)
 	inventoryRepo := repository.NewInventoryRepository(db)
 	quotationRepo := repository.NewQuotationRepository(db)
+	orderRepo := repository.NewOrderRepository(db)
 
 	// Initialize handlers
 	customerHandler := handlers.NewCustomerHandler(customerRepo)
@@ -87,6 +88,7 @@ func main() {
 	productHandler := handlers.NewProductHandler(productRepo)
 	inventoryHandler := handlers.NewInventoryHandler(inventoryRepo, productRepo)
 	quotationHandler := handlers.NewQuotationHandler(quotationRepo, customerRepo, productRepo, pdfGenerator)
+	orderHandler := handlers.NewOrderHandler(orderRepo)
 
 	// // JWT middleware for protected routes
 	// jwtMiddleware := middleware.JWTWithConfig(middleware.JWTConfig{
@@ -166,6 +168,13 @@ func main() {
 	e.POST("/api/quotations", quotationHandler.CreateQuotation)
 	e.GET("/api/quotations/:id/pdf", quotationHandler.GenerateQuotationPDF)
 	e.POST("/api/quotations/:id/status", quotationHandler.UpdateQuotationStatus)
+
+	// Order routes
+	e.GET("/api/orders", orderHandler.GetAllOrders)
+	e.GET("/api/orders/:id", orderHandler.GetOrderByID)
+	e.POST("/api/orders", orderHandler.CreateOrder)
+	e.PUT("/api/orders/:id", orderHandler.UpdateOrder)
+	e.DELETE("/api/orders/:id", orderHandler.DeleteOrder)
 
 	// Start server
 	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()

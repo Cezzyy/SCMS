@@ -5,7 +5,7 @@ import type { Component } from 'vue'
 // Lazy load components
 const DashboardComponent = defineAsyncComponent(() => import('../components/DashboardContent.vue'))
 const CustomersComponent = defineAsyncComponent(() => import('../components/CustomerList.vue'))
-const SalesOrdersComponent = defineAsyncComponent(() => import('../components/SalesOrdersPage.vue'))
+const SalesOrdersComponent = defineAsyncComponent(() => import('../components/OrderList.vue'))
 const InventoryComponent = defineAsyncComponent(() => import('../components/InventoryList.vue'))
 const QuotationsComponent = defineAsyncComponent(() => import('../components/QuotationList.vue'))
 const ReportsComponent = defineAsyncComponent(() => import('../components/ReportsPage.vue'))
