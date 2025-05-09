@@ -104,7 +104,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div :class="['min-h-screen flex flex-col md:flex-row overflow-hidden', darkMode ? 'dark bg-bg-alt dark:bg-gray-900' : 'bg-white']">
+  <div :class="['min-h-screen flex flex-col md:flex-row', darkMode ? 'dark bg-bg-alt dark:bg-gray-900' : 'bg-white']">
     <!-- Overlay for mobile when sidebar is open -->
     <div
       v-if="isMobile && isSidebarOpen"
@@ -116,8 +116,8 @@ onUnmounted(() => {
     <aside
       :class="[
         'flex flex-col bg-primary text-text-primary transition-all duration-300 ease-in-out',
-        'z-30 h-screen flex-shrink-0',
-        isMobile ? 'fixed left-0 top-0 bottom-0' : 'sticky top-0',
+        'z-30 flex-shrink-0',
+        isMobile ? 'fixed left-0 top-0 bottom-0 h-screen' : 'sticky top-0 max-h-screen overflow-y-auto',
         isSidebarOpen ? 'translate-x-0 w-64' : isMobile ? '-translate-x-full' : 'w-16',
         'dark:bg-gray-900 dark:text-gray-100'
       ]"
@@ -178,9 +178,9 @@ onUnmounted(() => {
     </aside>
 
     <!-- Main content -->
-    <div class="flex-1 flex flex-col overflow-hidden w-full">
+    <div class="flex-1 flex flex-col w-full">
       <!-- Top navbar -->
-      <header class="bg-white dark:bg-gray-900 shadow-sm z-10">
+      <header class="sticky top-0 bg-white dark:bg-gray-900 shadow-sm z-10">
         <div class="px-3 sm:px-4 lg:px-6 py-3 md:py-4 flex items-center justify-between">
           <!-- Mobile menu button -->
           <button 
@@ -211,7 +211,7 @@ onUnmounted(() => {
       </header>
 
       <!-- Page content -->
-      <main class="flex-1 overflow-y-auto overflow-x-hidden bg-bg-alt dark:bg-gray-900 p-2 sm:p-3 md:p-4 lg:p-6">
+      <main class="flex-1 bg-bg-alt dark:bg-gray-900 p-2 sm:p-3 md:p-4 lg:p-6">
         <div class="max-w-full mx-auto w-full">
           <!-- Dynamic component with transition and loading indicator -->
           <transition 
