@@ -2,69 +2,13 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { Line, Bar } from 'vue-chartjs';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import { useReportStore } from '@/stores/reportStore';
 
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
-// Define types for loading and error states
-type DataType = 'sales' | 'stock' | 'customers';
-type LoadingState = Record<DataType, boolean>;
-type ErrorState = Record<DataType, string | null>;
-
-// Mock data (in a real app, this would come from Pinia store)
-const loading = ref<LoadingState>({
-  sales: true,
-  stock: false,
-  customers: true
-});
-
-const error = ref<ErrorState>({
-  sales: null,
-  stock: null,
-  customers: null
-});
-
-const salesSummary = ref([
-  { day: '2023-01-01', total_amount: 1500 },
-  { day: '2023-01-02', total_amount: 2200 },
-  { day: '2023-01-03', total_amount: 1800 },
-  { day: '2023-01-04', total_amount: 2400 },
-  { day: '2023-01-05', total_amount: 2100 },
-  { day: '2023-01-06', total_amount: 2800 },
-  { day: '2023-01-07', total_amount: 3200 }
-]);
-
-const lowStock = ref([
-  { id: 1, name: 'Product A', current_stock: 5, reorder_level: 10 },
-  { id: 2, name: 'Product B', current_stock: 3, reorder_level: 15 },
-  { id: 3, name: 'Product C', current_stock: 8, reorder_level: 12 },
-  { id: 4, name: 'Product D', current_stock: 20, reorder_level: 10 },
-  { id: 5, name: 'Product E', current_stock: 2, reorder_level: 5 },
-  { id: 6, name: 'Product F', current_stock: 14, reorder_level: 8 }
-]);
-
-// Top customers data
-const topCustomers = ref([
-  { id: 1, name: 'Acme Corporation', total_spent: 12500, orders: 8, avatar: '👔' },
-  { id: 2, name: 'TechNova Solutions', total_spent: 9800, orders: 5, avatar: '💻' },
-  { id: 3, name: 'Global Industries', total_spent: 8200, orders: 6, avatar: '🌐' },
-  { id: 4, name: 'Sunrise Retailers', total_spent: 6400, orders: 4, avatar: '🛒' },
-  { id: 5, name: 'Precision Engineering', total_spent: 5900, orders: 3, avatar: '⚙️' }
-]);
-
-// Computed values for KPIs
-const totalSales = computed(() => {
-  return salesSummary.value.reduce((sum, item) => sum + item.total_amount, 0);
-});
-
-const numberOfOrders = computed(() => {
-  // Mock value - would come from store in real implementation
-  return 42;
-});
-
-const lowStockCount = computed(() => {
-  return lowStock.value.filter(item => item.current_stock < item.reorder_level).length;
-});
+// Initialize the report store
+const reportStore = useReportStore();
 
 // Detect dark mode
 const isDarkMode = ref(window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -128,7 +72,7 @@ const chartOptions = computed(() => {
 // Chart data with dark mode compatible colors
 const salesChartData = computed(() => {
   return {
-    labels: salesSummary.value.map(item => item.day),
+    labels: reportStore.salesTrends.map(item => item.day),
     datasets: [
       {
         label: 'Sales',
@@ -141,7 +85,7 @@ const salesChartData = computed(() => {
         pointBorderWidth: 1,
         pointRadius: 4,
         fill: true,
-        data: salesSummary.value.map(item => item.total_amount)
+        data: reportStore.salesTrends.map(item => item.total_amount)
       }
     ]
   };
@@ -149,7 +93,7 @@ const salesChartData = computed(() => {
 
 const inventoryChartData = computed(() => {
   return {
-    labels: lowStock.value.map(item => item.name),
+    labels: reportStore.lowStockItems.map(item => item.name),
     datasets: [
       {
         label: 'Current Stock',
@@ -157,7 +101,7 @@ const inventoryChartData = computed(() => {
         borderColor: isDarkMode.value ? 'rgba(239, 68, 68, 0.8)' : 'rgba(255, 99, 132, 1)',
         borderWidth: 1,
         borderRadius: 4,
-        data: lowStock.value.map(item => item.current_stock)
+        data: reportStore.lowStockItems.map(item => item.current_stock)
       },
       {
         label: 'Reorder Level',
@@ -165,7 +109,7 @@ const inventoryChartData = computed(() => {
         borderColor: isDarkMode.value ? 'rgba(8, 145, 178, 0.8)' : 'rgba(75, 192, 192, 1)',
         borderWidth: 1,
         borderRadius: 4,
-        data: lowStock.value.map(item => item.reorder_level)
+        data: reportStore.lowStockItems.map(item => item.reorder_level)
       }
     ]
   };
@@ -174,7 +118,7 @@ const inventoryChartData = computed(() => {
 // Top customers chart data
 const customersChartData = computed(() => {
   return {
-    labels: topCustomers.value.map(customer => customer.name),
+    labels: reportStore.topCustomersWithAvatars.map(customer => customer.name),
     datasets: [
       {
         label: 'Total Spent',
@@ -182,71 +126,46 @@ const customersChartData = computed(() => {
         borderColor: isDarkMode.value ? 'rgba(139, 92, 246, 0.9)' : 'rgba(124, 58, 237, 0.9)',
         borderWidth: 1,
         borderRadius: 4,
-        data: topCustomers.value.map(customer => customer.total_spent)
+        data: reportStore.topCustomersWithAvatars.map(customer => customer.total_spent)
       }
     ]
   };
 });
 
 // Methods
-const fetchAll = () => {
-  loading.value.sales = true;
-  loading.value.stock = true;
-  loading.value.customers = true;
-
-  // Reset errors
-  error.value.sales = null;
-  error.value.stock = null;
-  error.value.customers = null;
-
-  // Simulate API calls
-  setTimeout(() => {
-    loading.value.sales = false;
-    // Simulate random error (20% chance)
-    if (Math.random() < 0.2) {
-      error.value.sales = "Failed to load sales data. Server unavailable.";
-    }
-  }, 1000);
-
-  setTimeout(() => {
-    loading.value.stock = false;
-    // Simulate random error (20% chance)
-    if (Math.random() < 0.2) {
-      error.value.stock = "Failed to load inventory data. Network error.";
-    }
-  }, 1500);
-  
-  setTimeout(() => {
-    loading.value.customers = false;
-    // Simulate random error (20% chance)
-    if (Math.random() < 0.2) {
-      error.value.customers = "Failed to load customer data. API error.";
-    }
-  }, 1200);
+const fetchAll = async () => {
+  await reportStore.refreshAll({ days: reportStore.period });
 };
 
-const dismissError = (type: DataType) => {
-  error.value[type] = null;
+const dismissError = (type: 'dashboard' | 'sales' | 'stock' | 'customers') => {
+  reportStore.dismissError(type);
 };
 
 const downloadSalesCSV = () => {
-  alert('Exporting sales CSV...');
-  // In a real app, this would call a store action: reportStore.downloadSalesCSV()
+  reportStore.downloadSalesCSV();
 };
 
 const downloadStockCSV = () => {
-  alert('Exporting stock CSV...');
-  // In a real app, this would call a store action
+  reportStore.downloadStockCSV();
 };
 
 const downloadCustomersCSV = () => {
-  alert('Exporting customers CSV...');
-  // In a real app, this would call a store action
+  reportStore.downloadCustomersCSV();
 };
 
+// Computed values to simplify template access
+const totalSales = computed(() => reportStore.totalSales);
+const numberOfOrders = computed(() => reportStore.orderCount);
+const lowStockCount = computed(() => reportStore.lowStockCount);
+const formattedPeriod = computed(() => reportStore.formattedPeriod);
+
+// Loading and error state accessors
+const loading = computed(() => reportStore.loading);
+const error = computed(() => reportStore.error);
+
 // Watch for system dark mode changes
-onMounted(() => {
-  fetchAll();
+onMounted(async () => {
+  await fetchAll();
   
   const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
   const handleDarkModeChange = (e: MediaQueryListEvent) => {
@@ -254,6 +173,11 @@ onMounted(() => {
   };
   
   darkModeMediaQuery.addEventListener('change', handleDarkModeChange);
+});
+
+// Refresh data when period changes
+watch(() => reportStore.period, async (newPeriod) => {
+  await fetchAll();
 });
 </script>
 
@@ -286,7 +210,7 @@ onMounted(() => {
           <div class="text-3xl font-bold text-gray-800 dark:text-white mt-1">₱{{ totalSales.toLocaleString() }}</div>
         </div>
         <div class="px-6 py-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-medium">
-          Period: Last 7 Days
+          Period: {{ formattedPeriod }}
         </div>
       </div>
 
@@ -296,7 +220,7 @@ onMounted(() => {
           <div class="text-3xl font-bold text-gray-800 dark:text-white mt-1">{{ numberOfOrders }}</div>
         </div>
         <div class="px-6 py-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-medium">
-          Period: Last 7 Days
+          Period: {{ formattedPeriod }}
         </div>
       </div>
 
@@ -355,15 +279,18 @@ onMounted(() => {
               <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-t-2 border-blue-600 dark:border-blue-500"></div>
             </div>
             <Line
-              v-else-if="!error.sales"
+              v-else-if="!error.sales && reportStore.salesTrends.length > 0"
               :data="salesChartData"
               :options="chartOptions"
               class="sales-chart"
             />
+            <div v-else-if="!loading.sales && reportStore.salesTrends.length === 0" class="flex items-center justify-center h-full">
+              <p class="text-gray-500 dark:text-gray-400">No sales data available for the selected period</p>
+            </div>
           </div>
 
           <!-- Sales Data Table -->
-          <div v-if="!loading.sales && !error.sales" class="border dark:border-gray-700 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900 flex-1">
+          <div v-if="!loading.sales && !error.sales && reportStore.salesTrends.length > 0" class="border dark:border-gray-700 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900 flex-1">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead class="bg-gray-100 dark:bg-gray-800">
                 <tr>
@@ -373,7 +300,7 @@ onMounted(() => {
                 </tr>
               </thead>
               <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                <tr v-for="(item, index) in salesSummary" :key="index" class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <tr v-for="(item, index) in reportStore.salesTrends" :key="index" class="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td class="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-800 dark:text-gray-200">{{ item.day }}</td>
                   <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">₱{{ item.total_amount.toLocaleString() }}</td>
                   <td class="px-6 py-3 whitespace-nowrap text-sm">
@@ -381,15 +308,15 @@ onMounted(() => {
                       <span
                         :class="[
                           'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-                          item.total_amount > salesSummary[index-1].total_amount
+                          item.total_amount > reportStore.salesTrends[index-1].total_amount
                             ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                            : item.total_amount < salesSummary[index-1].total_amount
+                            : item.total_amount < reportStore.salesTrends[index-1].total_amount
                               ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
                               : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                         ]"
                       >
                         <svg
-                          v-if="item.total_amount > salesSummary[index-1].total_amount"
+                          v-if="item.total_amount > reportStore.salesTrends[index-1].total_amount"
                           class="h-3 w-3 mr-1"
                           fill="none"
                           viewBox="0 0 24 24"
@@ -398,7 +325,7 @@ onMounted(() => {
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                         </svg>
                         <svg
-                          v-else-if="item.total_amount < salesSummary[index-1].total_amount"
+                          v-else-if="item.total_amount < reportStore.salesTrends[index-1].total_amount"
                           class="h-3 w-3 mr-1"
                           fill="none"
                           viewBox="0 0 24 24"
@@ -406,8 +333,8 @@ onMounted(() => {
                         >
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
-                        <span v-if="item.total_amount > salesSummary[index-1].total_amount">Up</span>
-                        <span v-else-if="item.total_amount < salesSummary[index-1].total_amount">Down</span>
+                        <span v-if="item.total_amount > reportStore.salesTrends[index-1].total_amount">Up</span>
+                        <span v-else-if="item.total_amount < reportStore.salesTrends[index-1].total_amount">Down</span>
                         <span v-else>No change</span>
                       </span>
                     </div>
@@ -464,15 +391,18 @@ onMounted(() => {
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-t-2 border-blue-600 dark:border-blue-500"></div>
               </div>
               <Bar
-                v-else-if="!error.stock"
+                v-else-if="!error.stock && reportStore.lowStockItems.length > 0"
                 :data="inventoryChartData"
                 :options="chartOptions"
                 class="inventory-chart"
               />
+              <div v-else-if="!loading.stock && reportStore.lowStockItems.length === 0" class="flex items-center justify-center h-full">
+                <p class="text-gray-500 dark:text-gray-400">No low stock items found</p>
+              </div>
             </div>
 
             <!-- Inventory Table -->
-            <div v-if="!loading.stock && !error.stock" class="border dark:border-gray-700 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900 flex-1">
+            <div v-if="!loading.stock && !error.stock && reportStore.lowStockItems.length > 0" class="border dark:border-gray-700 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900 flex-1">
               <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead class="bg-gray-100 dark:bg-gray-800">
                   <tr>
@@ -483,7 +413,7 @@ onMounted(() => {
                   </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  <tr v-for="item in lowStock" :key="item.id" 
+                  <tr v-for="item in reportStore.lowStockItems" :key="item.id" 
                       :class="{ 
                         'bg-red-50 dark:bg-red-900/20': item.current_stock < item.reorder_level,
                         'hover:bg-gray-50 dark:hover:bg-gray-700': item.current_stock >= item.reorder_level
@@ -552,15 +482,18 @@ onMounted(() => {
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-t-2 border-blue-600 dark:border-blue-500"></div>
               </div>
               <Bar
-                v-else-if="!error.customers"
+                v-else-if="!error.customers && reportStore.topCustomersWithAvatars.length > 0"
                 :data="customersChartData"
                 :options="chartOptions"
                 class="customers-chart"
               />
+              <div v-else-if="!loading.customers && reportStore.topCustomersWithAvatars.length === 0" class="flex items-center justify-center h-full">
+                <p class="text-gray-500 dark:text-gray-400">No customer data available</p>
+              </div>
             </div>
 
             <!-- Top Customers Table -->
-            <div v-if="!loading.customers && !error.customers" class="border dark:border-gray-700 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900 flex-1">
+            <div v-if="!loading.customers && !error.customers && reportStore.topCustomersWithAvatars.length > 0" class="border dark:border-gray-700 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900 flex-1">
               <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead class="bg-gray-100 dark:bg-gray-800">
                   <tr>
@@ -570,7 +503,7 @@ onMounted(() => {
                   </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  <tr v-for="customer in topCustomers" :key="customer.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <tr v-for="customer in reportStore.topCustomersWithAvatars" :key="customer.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td class="px-6 py-3 whitespace-nowrap">
                       <div class="flex items-center">
                         <div class="flex-shrink-0 h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-lg">
@@ -578,6 +511,7 @@ onMounted(() => {
                         </div>
                         <div class="ml-4">
                           <div class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ customer.name }}</div>
+                          <div v-if="customer.contact_name" class="text-xs text-gray-500 dark:text-gray-400">{{ customer.contact_name }}</div>
                         </div>
                       </div>
                     </td>
