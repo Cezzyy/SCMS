@@ -73,19 +73,25 @@ func (h *OrderHandler) GetOrderByID(c echo.Context) error {
 	})
 }
 
+// CreateOrderRequest represents the structure of the JSON payload for creating orders
+type CreateOrderRequest struct {
+	Order     models.Order       `json:"order"`
+	Items     []models.OrderItem `json:"items"`
+	Quotation *struct {
+		QuotationID int `json:"quotation_id"`
+	} `json:"quotation,omitempty"`
+}
+
 // CreateOrder creates a new order with items
 func (h *OrderHandler) CreateOrder(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	// Define a struct to receive the order data with items
-	var orderData struct {
-		Order models.Order       `json:"order"`
-		Items []models.OrderItem `json:"items"`
-	}
+	var orderData CreateOrderRequest
 
 	if err := c.Bind(&orderData); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "Invalid request payload",
+			"error": "Invalid request payload: " + err.Error(),
 		})
 	}
 
@@ -102,6 +108,12 @@ func (h *OrderHandler) CreateOrder(c echo.Context) error {
 		})
 	}
 
+	// If the request includes a quotation reference, set the quotation ID in the order
+	if orderData.Quotation != nil && orderData.Quotation.QuotationID > 0 {
+		quotationID := orderData.Quotation.QuotationID
+		orderData.Order.QuotationID = &quotationID
+	}
+
 	// Create the order with items in a single transaction
 	err := h.orderRepo.CreateOrderWithItems(ctx, &orderData.Order, orderData.Items)
 	if err != nil {
@@ -112,7 +124,7 @@ func (h *OrderHandler) CreateOrder(c echo.Context) error {
 		}
 
 		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to create order",
+			"error": "Failed to create order: " + err.Error(),
 		})
 	}
 
@@ -197,4 +209,71 @@ func (h *OrderHandler) DeleteOrder(c echo.Context) error {
 	}
 
 	return c.NoContent(http.StatusNoContent)
+}
+
+// StatusUpdate represents the status update request
+type StatusUpdate struct {
+	Status string `json:"status"`
+}
+
+// UpdateOrderStatus updates just the status of an order
+func (h *OrderHandler) UpdateOrderStatus(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Invalid order ID",
+		})
+	}
+
+	var statusUpdate StatusUpdate
+	if err := c.Bind(&statusUpdate); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Invalid request payload",
+		})
+	}
+
+	// Validate required field
+	if statusUpdate.Status == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Status is required",
+		})
+	}
+
+	// Validate status value
+	validStatuses := map[string]bool{
+		"Pending":   true,
+		"Shipped":   true,
+		"Delivered": true,
+		"Cancelled": true,
+	}
+	if !validStatuses[statusUpdate.Status] {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Invalid status value. Must be one of: Pending, Shipped, Delivered, Cancelled",
+		})
+	}
+
+	// Update the status
+	err = h.orderRepo.UpdateStatus(ctx, id, statusUpdate.Status)
+	if err != nil {
+		if err.Error() == "order not found" {
+			return c.JSON(http.StatusNotFound, map[string]string{
+				"error": "Order not found",
+			})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to update order status: " + err.Error(),
+		})
+	}
+
+	// Return updated order
+	order, err := h.orderRepo.GetByID(ctx, id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Order status updated but failed to retrieve updated order",
+		})
+	}
+
+	return c.JSON(http.StatusOK, order)
 }

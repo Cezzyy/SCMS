@@ -31,7 +31,7 @@ func main() {
 	// Enhanced CORS configuration
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:5174"},
-		AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodOptions},
+		AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch, http.MethodOptions},
 		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 		ExposeHeaders:    []string{"Content-Length", "Content-Type"},
 		AllowCredentials: true,
@@ -175,6 +175,7 @@ func main() {
 	e.POST("/api/orders", orderHandler.CreateOrder)
 	e.PUT("/api/orders/:id", orderHandler.UpdateOrder)
 	e.DELETE("/api/orders/:id", orderHandler.DeleteOrder)
+	e.POST("/api/orders/:id/status", orderHandler.UpdateOrderStatus)
 
 	// Start server
 	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/Cezzyy/SCMS/backend/internal/models"
@@ -185,10 +186,10 @@ func (r *OrderRepository) GetOrderItems(ctx context.Context, orderID int) ([]mod
 func (r *OrderRepository) CreateOrderItem(ctx context.Context, item *models.OrderItem) error {
 	query := `
 		INSERT INTO order_items (
-			order_id, product_id, quantity, unit_price, discount, line_total
+			order_id, product_id, quantity, unit_price, discount
 		) VALUES (
-			$1, $2, $3, $4, $5, $6
-		) RETURNING order_item_id`
+			$1, $2, $3, $4, $5
+		) RETURNING order_item_id, line_total`
 
 	err := r.db.QueryRowContext(
 		ctx,
@@ -198,8 +199,7 @@ func (r *OrderRepository) CreateOrderItem(ctx context.Context, item *models.Orde
 		item.Quantity,
 		item.UnitPrice,
 		item.Discount,
-		item.LineTotal,
-	).Scan(&item.OrderItemID)
+	).Scan(&item.OrderItemID, &item.LineTotal)
 
 	return err
 }
@@ -212,11 +212,11 @@ func (r *OrderRepository) UpdateOrderItem(ctx context.Context, item *models.Orde
 			product_id = $2,
 			quantity = $3,
 			unit_price = $4,
-			discount = $5,
-			line_total = $6
-		WHERE order_item_id = $7`
+			discount = $5
+		WHERE order_item_id = $6
+		RETURNING line_total`
 
-	result, err := r.db.ExecContext(
+	result := r.db.QueryRowContext(
 		ctx,
 		query,
 		item.OrderID,
@@ -224,23 +224,14 @@ func (r *OrderRepository) UpdateOrderItem(ctx context.Context, item *models.Orde
 		item.Quantity,
 		item.UnitPrice,
 		item.Discount,
-		item.LineTotal,
 		item.OrderItemID,
 	)
-	if err != nil {
-		return err
-	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rowsAffected == 0 {
+	err := result.Scan(&item.LineTotal)
+	if err == sql.ErrNoRows {
 		return errors.New("order item not found")
 	}
-
-	return nil
+	return err
 }
 
 // DeleteOrderItem removes an order item by ID
@@ -307,10 +298,10 @@ func (r *OrderRepository) CreateOrderWithItems(ctx context.Context, order *model
 	// Then insert all the items
 	itemQuery := `
 		INSERT INTO order_items (
-			order_id, product_id, quantity, unit_price, discount, line_total
+			order_id, product_id, quantity, unit_price, discount
 		) VALUES (
-			$1, $2, $3, $4, $5, $6
-		) RETURNING order_item_id`
+			$1, $2, $3, $4, $5
+		) RETURNING order_item_id, line_total`
 
 	for i := range items {
 		items[i].OrderID = order.OrderID
@@ -322,8 +313,7 @@ func (r *OrderRepository) CreateOrderWithItems(ctx context.Context, order *model
 			items[i].Quantity,
 			items[i].UnitPrice,
 			items[i].Discount,
-			items[i].LineTotal,
-		).Scan(&items[i].OrderItemID)
+		).Scan(&items[i].OrderItemID, &items[i].LineTotal)
 
 		if err != nil {
 			return err
@@ -331,4 +321,71 @@ func (r *OrderRepository) CreateOrderWithItems(ctx context.Context, order *model
 	}
 
 	return tx.Commit()
+}
+
+// UpdateStatus updates only the status of an existing order
+func (r *OrderRepository) UpdateStatus(ctx context.Context, id int, status string) error {
+	// Validate status
+	validStatuses := map[string]bool{
+		"Pending":   true,
+		"Shipped":   true,
+		"Delivered": true,
+		"Cancelled": true,
+	}
+
+	if !validStatuses[status] {
+		return fmt.Errorf("invalid status: %s", status)
+	}
+
+	// Get the current status of the order
+	var currentStatus string
+	err := r.db.QueryRowContext(ctx, "SELECT status FROM orders WHERE order_id = $1", id).Scan(&currentStatus)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return errors.New("order not found")
+		}
+		return fmt.Errorf("failed to get current order status: %w", err)
+	}
+
+	// Validate status flow
+	if currentStatus == "Cancelled" {
+		return errors.New("cancelled orders cannot be updated")
+	}
+
+	if currentStatus == "Delivered" {
+		return errors.New("delivered orders cannot be updated")
+	}
+
+	if currentStatus == "Shipped" && status == "Pending" {
+		return errors.New("shipped orders cannot go back to pending status")
+	}
+
+	// Update the status in the database
+	query := `
+		UPDATE orders 
+		SET status = $1, updated_at = NOW() 
+		WHERE order_id = $2
+		RETURNING *`
+
+	var order models.Order
+	err = r.db.QueryRowContext(ctx, query, status, id).Scan(
+		&order.OrderID,
+		&order.CustomerID,
+		&order.QuotationID,
+		&order.OrderDate,
+		&order.ShippingAddress,
+		&order.Status,
+		&order.TotalAmount,
+		&order.CreatedAt,
+		&order.UpdatedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return errors.New("order not found")
+		}
+		return fmt.Errorf("failed to update order status: %w", err)
+	}
+
+	return nil
 }
