@@ -6,6 +6,7 @@ import type {
   QuotationUpdate, 
   QuotationWithItems 
 } from '@/types/Quotation';
+import axios from 'axios';
 
 export const useQuotationStore = defineStore('quotation', {
   state: () => ({
@@ -74,15 +75,50 @@ export const useQuotationStore = defineStore('quotation', {
         this.loading = true;
         this.error = null;
 
-        const response = await apiClient.post<Quotation>('/api/quotations', quotation);
+        // Convert date strings to ISO format for Go's time.Time parsing
+        const quoteDate = new Date(quotation.quote_date).toISOString();
+        const validityDate = new Date(quotation.validity_date).toISOString();
 
-        // Add new quotation to the list
+        // Create the payload as a plain JavaScript object (not stringified)
+        const payload = {
+          quotation: {
+            customer_id: Number(quotation.customer_id),
+            quote_date: quoteDate,
+            validity_date: validityDate,
+            status: quotation.status,
+            total_amount: quotation.total_amount
+          },
+          items: quotation.items ? quotation.items.map(item => ({
+            product_id: item.product_id,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            discount: item.discount
+          })) : []
+        };
+
+        console.log('Sending payload:', payload);
+        
+        // Use a simple axios POST with default settings
+        const response = await axios.post(
+          'http://localhost:8081/api/quotations',
+          payload,
+          {
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+        
+        console.log('Success! Response:', response.data);
+        
+        // Add to store if successful
         this.quotations.push(response.data);
-
         return response.data;
-      } catch (err) {
+      } catch (err: any) {
         this.error = 'Failed to create quotation';
-        console.error(err);
+        console.error('Error details:', err);
+        // Show the response error message if available
+        if (err.response && err.response.data) {
+          console.error('Server error:', err.response.data);
+        }
         throw err;
       } finally {
         this.loading = false;
@@ -97,11 +133,39 @@ export const useQuotationStore = defineStore('quotation', {
         this.loading = true;
         this.error = null;
 
-        const response = await apiClient.put<Quotation>(
-          `/api/quotations/${quotation.quotation_id}`, 
-          quotation
-        );
+        // Convert date strings to ISO format for Go's time.Time parsing
+        const quoteDate = new Date(quotation.quote_date).toISOString();
+        const validityDate = new Date(quotation.validity_date).toISOString();
 
+        // Create the payload as a plain JavaScript object (not stringified)
+        const payload = {
+          quotation: {
+            quotation_id: quotation.quotation_id,
+            customer_id: Number(quotation.customer_id),
+            quote_date: quoteDate,
+            validity_date: validityDate,
+            status: quotation.status,
+            total_amount: quotation.total_amount
+          },
+          items: quotation.items ? quotation.items.map(item => ({
+            product_id: item.product_id,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            discount: item.discount
+          })) : []
+        };
+
+        console.log('Sending payload:', payload);
+        
+        // Use a simple axios PUT with default settings
+        const response = await axios.put(
+          `http://localhost:8081/api/quotations/${quotation.quotation_id}`,
+          payload,
+          {
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+        
         // Update quotation in the list
         const index = this.quotations.findIndex(
           (q) => q.quotation_id === quotation.quotation_id
@@ -121,9 +185,13 @@ export const useQuotationStore = defineStore('quotation', {
         }
 
         return response.data;
-      } catch (err) {
+      } catch (err: any) {
         this.error = 'Failed to update quotation';
-        console.error(err);
+        console.error('Error details:', err);
+        // Show the response error message if available
+        if (err.response && err.response.data) {
+          console.error('Server error:', err.response.data);
+        }
         throw err;
       } finally {
         this.loading = false;
@@ -168,7 +236,7 @@ export const useQuotationStore = defineStore('quotation', {
         this.loading = true;
         this.error = null;
 
-        const response = await apiClient.patch<Quotation>(
+        const response = await apiClient.post<Quotation>(
           `/api/quotations/${id}/status`, 
           { status }
         );
