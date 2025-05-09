@@ -185,6 +185,11 @@ func main() {
 	e.GET("/api/reports/low-stock", reportHandler.GetLowStockItems)
 	e.GET("/api/reports/top-customers", reportHandler.GetTopCustomers)
 
+	// Export CSV routes
+	e.GET("/api/reports/sales-trends/export", reportHandler.ExportSalesTrendsCSV)
+	e.GET("/api/reports/low-stock/export", reportHandler.ExportLowStockItemsCSV)
+	e.GET("/api/reports/top-customers/export", reportHandler.ExportTopCustomersCSV)
+
 	// Start server
 	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
