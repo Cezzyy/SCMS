@@ -28,7 +28,7 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	// Enhanced CORS configuration
+	// CORS configuration - Must specify exact origins when using credentials
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:5174"},
 		AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch, http.MethodOptions},
@@ -49,8 +49,8 @@ func main() {
 
 	// Initialize PDF generator service
 	// Use absolute paths to avoid inconsistent path resolution
-	templatesDir := "C:\\Users\\Desktop\\SCMS\\backend\\cmd\\templates"
-	cssDir := "C:\\Users\\Desktop\\SCMS\\backend\\cmd\\templates\\css"
+	templatesDir := "C:\\Users\\karl\\Dropbox\\PC\\Desktop\\SCMS\\backend\\cmd\\templates"
+	cssDir := "C:\\Users\\karl\\Dropbox\\PC\\Desktop\\SCMS\\backend\\cmd\\templates\\css"
 
 	// Log the actual paths for debugging
 	log.Printf("Templates directory (fixed): %s", templatesDir)
@@ -69,40 +69,27 @@ func main() {
 	// Create PDF generator service
 	pdfGenerator := services.NewPDFGenerator(templatesDir, cssDir, wkhtmltopdfPath)
 
-	// JWT secret for user authentication
-	// jwtSecret := "your-secret-key-here"
-
 	// Initialize repositories
 	customerRepo := repository.NewCustomerRepository(db)
 	contactRepo := repository.NewContactRepository(db)
-	// userRepo := repository.NewUserRepository(db)
+	userRepo := repository.NewUserRepository(db)
 	productRepo := repository.NewProductRepository(db)
 	inventoryRepo := repository.NewInventoryRepository(db)
 	quotationRepo := repository.NewQuotationRepository(db)
 	orderRepo := repository.NewOrderRepository(db)
 	reportRepo := repository.NewReportRepository(db)
 
+	// Initialize auth service
+	authService := services.NewAuthService(userRepo)
+
 	// Initialize handlers
 	customerHandler := handlers.NewCustomerHandler(customerRepo)
 	contactHandler := handlers.NewContactHandler(contactRepo, customerRepo)
-	// userHandler := handlers.NewUserHandler(userRepo, jwtSecret)
 	productHandler := handlers.NewProductHandler(productRepo)
 	inventoryHandler := handlers.NewInventoryHandler(inventoryRepo, productRepo)
 	quotationHandler := handlers.NewQuotationHandler(quotationRepo, customerRepo, productRepo, pdfGenerator)
 	orderHandler := handlers.NewOrderHandler(orderRepo)
 	reportHandler := handlers.NewReportHandler(reportRepo)
-
-	// // JWT middleware for protected routes
-	// jwtMiddleware := middleware.JWTWithConfig(middleware.JWTConfig{
-	// 	SigningKey: []byte(jwtSecret),
-	// 	Skipper: func(c echo.Context) bool {
-	// 		// Skip authentication for login and health check routes
-	// 		if c.Path() == "/api/auth/login" || c.Path() == "/api/health" {
-	// 			return true
-	// 		}
-	// 		return false
-	// 	},
-	// })
 
 	// API Routes
 	// Health check
@@ -112,17 +99,51 @@ func main() {
 		})
 	})
 
-	// Auth routes - public
-	// e.POST("/api/auth/login", userHandler.Login)
+	// Auth routes - Direct Echo handler instead of wrapper
+	e.POST("/api/auth/login", func(c echo.Context) error {
+		// Parse request body
+		var loginReq services.LoginRequest
+		if err := c.Bind(&loginReq); err != nil {
+			return c.JSON(http.StatusBadRequest, "Invalid request")
+		}
 
-	// User routes - protected
-	// usersGroup := e.Group("/api/users", jwtMiddleware)
-	// usersGroup.GET("", userHandler.GetAllUsers)
-	// usersGroup.GET("/:id", userHandler.GetUserByID)
-	// usersGroup.POST("", userHandler.CreateUser)
-	// usersGroup.PUT("/:id", userHandler.UpdateUser)
-	// usersGroup.DELETE("/:id", userHandler.DeleteUser)
-	// usersGroup.PUT("/:id/password", userHandler.ChangePassword)
+		// Validate input
+		if loginReq.Email == "" || loginReq.Password == "" {
+			return c.JSON(http.StatusBadRequest, "Email and password are required")
+		}
+
+		// Attempt to login
+		authResponse, err := authService.Login(c.Request().Context(), loginReq)
+		if err != nil {
+			return c.JSON(http.StatusUnauthorized, err.Error())
+		}
+
+		// Set session cookie
+		cookie := new(http.Cookie)
+		cookie.Name = "session_id"
+		cookie.Value = authResponse.SessionID
+		cookie.Path = "/"
+		cookie.HttpOnly = true
+		cookie.Secure = c.Request().TLS != nil
+		cookie.SameSite = http.SameSiteLaxMode
+		cookie.MaxAge = 86400 // 24 hours in seconds
+		c.SetCookie(cookie)
+
+		return c.JSON(http.StatusOK, authResponse)
+	})
+
+	e.POST("/api/auth/logout", func(c echo.Context) error {
+		// Clear the session cookie
+		cookie := new(http.Cookie)
+		cookie.Name = "session_id"
+		cookie.Value = ""
+		cookie.Path = "/"
+		cookie.HttpOnly = true
+		cookie.MaxAge = -1 // Delete the cookie
+		c.SetCookie(cookie)
+
+		return c.JSON(http.StatusOK, map[string]string{"message": "Logged out successfully"})
+	})
 
 	// Customer routes
 	e.GET("/api/customers", customerHandler.GetAllCustomers)
