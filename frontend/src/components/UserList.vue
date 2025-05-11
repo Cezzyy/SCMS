@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, defineAsyncComponent } from 'vue';
 import type { User } from '../types/User';
+import { useUserStore } from '../stores/userStore';
 
 const UserModal = defineAsyncComponent(() => import('../components/UserModal.vue'));
 const ViewModal = defineAsyncComponent(() => import('../components/ViewModal.vue'));
 const ConfirmationModal = defineAsyncComponent(() => import('../components/ConfirmationModal.vue'));
 
+// Initialize user store
+const userStore = useUserStore();
+
 // State
-const isLoading = ref(false);
 const showUserModal = ref(false);
 const showViewModal = ref(false);
 const showConfirmModal = ref(false);
@@ -15,99 +18,53 @@ const userToEdit = ref<User | null>(null);
 const userToView = ref<User | null>(null);
 const userToDelete = ref<User | null>(null);
 const searchQuery = ref('');
+const selectedRole = ref('all');
 
 // Pagination
 const currentPage = ref(1);
 const itemsPerPage = 10;
 
-// Mock data - would normally come from an API
-const users = ref<User[]>([
-  {
-    user_id: 1,
-    username: 'admin',
-    role: 'admin',
-    first_name: 'Admin',
-    last_name: 'User',
-    email: 'admin@example.com',
-    phone: '123-456-7890',
-    department: 'IT',
-    position: 'System Administrator',
-    last_login: new Date('2023-09-30T10:30:00Z'),
-    created_at: new Date('2023-01-01T00:00:00Z'),
-    updated_at: new Date('2023-09-30T10:30:00Z')
-  },
-  {
-    user_id: 2,
-    username: 'jsmith',
-    role: 'manager',
-    first_name: 'John',
-    last_name: 'Smith',
-    email: 'john.smith@example.com',
-    phone: '123-456-7891',
-    department: 'Sales',
-    position: 'Sales Manager',
-    last_login: new Date('2023-09-29T14:20:00Z'),
-    created_at: new Date('2023-01-15T00:00:00Z'),
-    updated_at: new Date('2023-09-29T14:20:00Z')
-  },
-  {
-    user_id: 3,
-    username: 'mjohnson',
-    role: 'staff',
-    first_name: 'Mary',
-    last_name: 'Johnson',
-    email: 'mary.johnson@example.com',
-    phone: '123-456-7892',
-    department: 'Customer Service',
-    position: 'Customer Support Representative',
-    last_login: new Date('2023-09-28T09:45:00Z'),
-    created_at: new Date('2023-02-01T00:00:00Z'),
-    updated_at: new Date('2023-09-28T09:45:00Z')
-  },
-  {
-    user_id: 4,
-    username: 'rwilliams',
-    role: 'staff',
-    first_name: 'Robert',
-    last_name: 'Williams',
-    email: 'robert.williams@example.com',
-    phone: '123-456-7893',
-    department: 'Warehouse',
-    position: 'Inventory Specialist',
-    last_login: new Date('2023-09-27T11:15:00Z'),
-    created_at: new Date('2023-02-15T00:00:00Z'),
-    updated_at: new Date('2023-09-27T11:15:00Z')
-  },
-  {
-    user_id: 5,
-    username: 'jbrown',
-    role: 'manager',
-    first_name: 'Jennifer',
-    last_name: 'Brown',
-    email: 'jennifer.brown@example.com',
-    phone: '123-456-7894',
-    department: 'Finance',
-    position: 'Financial Analyst',
-    last_login: new Date('2023-09-26T13:40:00Z'),
-    created_at: new Date('2023-03-01T00:00:00Z'),
-    updated_at: new Date('2023-09-26T13:40:00Z')
-  }
-]);
+// Computed props
+const isLoading = computed(() => userStore.loading);
+const error = computed(() => userStore.error);
+const users = computed(() => userStore.users);
 
-// Filtered users based on search
+// Role counts
+const roleCounts = computed(() => {
+  const counts = {
+    admin: users.value.filter(user => user.role.toLowerCase().includes('admin')).length,
+    manager: users.value.filter(user => user.role.toLowerCase().includes('manager')).length,
+    sales: users.value.filter(user => user.role.toLowerCase().includes('sales')).length,
+    inventory: users.value.filter(user => user.role.toLowerCase().includes('inventory')).length
+  };
+  return counts;
+});
+
+// Filtered users based on search and role filter
 const filteredUsers = computed(() => {
-  if (!searchQuery.value) return users.value;
-
-  const query = searchQuery.value.toLowerCase();
-  return users.value.filter(user =>
-    user.username.toLowerCase().includes(query) ||
-    user.first_name.toLowerCase().includes(query) ||
-    user.last_name.toLowerCase().includes(query) ||
-    user.email.toLowerCase().includes(query) ||
-    user.department?.toLowerCase().includes(query) ||
-    user.position?.toLowerCase().includes(query) ||
-    user.role.toLowerCase().includes(query)
-  );
+  let filtered = users.value;
+  
+  // Apply search filter
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    filtered = filtered.filter(user =>
+      user.first_name.toLowerCase().includes(query) ||
+      user.last_name.toLowerCase().includes(query) ||
+      user.email.toLowerCase().includes(query) ||
+      user.department?.toLowerCase().includes(query) ||
+      user.position?.toLowerCase().includes(query) ||
+      user.role.toLowerCase().includes(query)
+    );
+  }
+  
+  // Apply role filter
+  if (selectedRole.value !== 'all') {
+    filtered = filtered.filter(user => 
+      user.role.toLowerCase().includes(selectedRole.value.toLowerCase())
+    );
+  }
+  
+  return filtered;
 });
 
 // Paginated users
@@ -139,7 +96,6 @@ const goToPage = (page: number) => {
 const openUserModal = (user: User | null = null) => {
   userToEdit.value = user ? { ...user } : {
     user_id: 0,
-    username: '',
     role: 'Sales Staff',
     first_name: '',
     last_name: '',
@@ -158,26 +114,19 @@ const openViewModal = (user: User) => {
   showViewModal.value = true;
 };
 
-const saveUser = (user: User) => {
-  // In a real app, this would be an API call
-  if (user.user_id) {
-    // Update existing user
-    const index = users.value.findIndex(u => u.user_id === user.user_id);
-    if (index !== -1) {
-      users.value[index] = { ...user, updated_at: new Date() };
+const saveUser = async (user: User) => {
+  try {
+    if (user.user_id) {
+      // Update existing user
+      await userStore.updateUser(user.user_id, user);
+    } else {
+      // Create new user
+      await userStore.createUser(user);
     }
-  } else {
-    // Create new user
-    const maxId = Math.max(0, ...users.value.map(u => u.user_id));
-    const newUser = {
-      ...user,
-      user_id: maxId + 1,
-      created_at: new Date(),
-      updated_at: new Date()
-    };
-    users.value.push(newUser);
+    showUserModal.value = false;
+  } catch (err) {
+    console.error('Error saving user:', err);
   }
-  showUserModal.value = false;
 };
 
 const confirmDelete = (user: User) => {
@@ -185,47 +134,42 @@ const confirmDelete = (user: User) => {
   showConfirmModal.value = true;
 };
 
-const deleteUser = () => {
+const deleteUser = async () => {
   if (!userToDelete.value) return;
 
-  // In a real app, this would be an API call
-  users.value = users.value.filter(u => u.user_id !== userToDelete.value?.user_id);
-
-  // Close modal
-  showConfirmModal.value = false;
-  userToDelete.value = null;
-
-  // Check if we need to adjust current page after deletion
-  if (paginatedUsers.value.length === 0 && currentPage.value > 1) {
-    currentPage.value--;
-  }
-};
-
-// Load data (in a real app, this would fetch from an API)
-const loadData = async () => {
-  isLoading.value = true;
   try {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    // In a real app, you would fetch data here
-  } catch (error) {
-    console.error('Error loading user data:', error);
-  } finally {
-    isLoading.value = false;
+    await userStore.deleteUser(userToDelete.value.user_id);
+    
+    // Close modal
+    showConfirmModal.value = false;
+    userToDelete.value = null;
+
+    // Check if we need to adjust current page after deletion
+    if (paginatedUsers.value.length === 0 && currentPage.value > 1) {
+      currentPage.value--;
+    }
+  } catch (err) {
+    console.error('Error deleting user:', err);
   }
 };
 
 // Load data on component mount
-onMounted(loadData);
+onMounted(async () => {
+  try {
+    await userStore.fetchUsers();
+  } catch (err) {
+    console.error('Error loading user data:', err);
+  }
+});
 </script>
 
 <template>
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden h-full flex flex-col">
     <!-- Header with tabs and actions -->
-    <div class="flex flex-col md:flex-row md:justify-between md:items-center p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 flex-shrink-0">
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-700 to-gray-800 text-white flex-shrink-0">
       <div class="mb-4 md:mb-0">
-        <h2 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-white mb-1">User Management</h2>
-        <p class="text-gray-600 dark:text-gray-300 text-xs md:text-sm">Manage system users and access control</p>
+        <h2 class="text-xl md:text-2xl font-bold mb-1">User Management</h2>
+        <p class="text-xs md:text-sm text-gray-300">Manage system users and access control</p>
       </div>
       <div class="flex flex-wrap gap-3 sm:gap-4">
         <button
@@ -241,78 +185,117 @@ onMounted(loadData);
     </div>
 
     <!-- Stats summary cards - non-scrollable -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-4 bg-gray-50 dark:bg-gray-900 flex-shrink-0">
-      <div class="bg-white dark:bg-gray-800 p-3 md:p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 p-4 bg-gray-800 flex-shrink-0">
+      <div class="bg-gray-700 p-3 md:p-4 rounded-lg shadow-sm border border-gray-600">
         <div class="flex items-center">
-          <div class="p-2 md:p-3 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 mr-3 md:mr-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </div>
-          <div>
-            <div class="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">Total Users</div>
-            <div class="text-lg md:text-2xl font-semibold text-gray-800 dark:text-white">
-              {{ users.length }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white dark:bg-gray-800 p-3 md:p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-        <div class="flex items-center">
-          <div class="p-2 md:p-3 rounded-full bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 mr-3 md:mr-4">
+          <div class="p-2 md:p-3 rounded-full bg-indigo-900 text-indigo-300 mr-3 md:mr-4">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
           <div>
-            <div class="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">Admin Users</div>
-            <div class="text-lg md:text-2xl font-semibold text-gray-800 dark:text-white">
-              {{ users.filter(user => user.role === 'admin').length }}
+            <div class="text-xs md:text-sm font-medium text-gray-300">Admin Users</div>
+            <div class="text-lg md:text-2xl font-semibold text-white">
+              {{ roleCounts.admin }}
             </div>
           </div>
         </div>
       </div>
 
-      <div class="bg-white dark:bg-gray-800 p-3 md:p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 sm:col-span-2 md:col-span-1">
+      <div class="bg-gray-700 p-3 md:p-4 rounded-lg shadow-sm border border-gray-600">
         <div class="flex items-center">
-          <div class="p-2 md:p-3 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 mr-3 md:mr-4">
+          <div class="p-2 md:p-3 rounded-full bg-blue-900 text-blue-300 mr-3 md:mr-4">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           </div>
           <div>
-            <div class="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">Staff Users</div>
-            <div class="text-lg md:text-2xl font-semibold text-gray-800 dark:text-white">
-              {{ users.filter(user => user.role === 'staff').length }}
+            <div class="text-xs md:text-sm font-medium text-gray-300">Manager Users</div>
+            <div class="text-lg md:text-2xl font-semibold text-white">
+              {{ roleCounts.manager }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gray-700 p-3 md:p-4 rounded-lg shadow-sm border border-gray-600">
+        <div class="flex items-center">
+          <div class="p-2 md:p-3 rounded-full bg-yellow-800 text-yellow-300 mr-3 md:mr-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs md:text-sm font-medium text-gray-300">Sales Users</div>
+            <div class="text-lg md:text-2xl font-semibold text-white">
+              {{ roleCounts.sales }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gray-700 p-3 md:p-4 rounded-lg shadow-sm border border-gray-600">
+        <div class="flex items-center">
+          <div class="p-2 md:p-3 rounded-full bg-purple-900 text-purple-300 mr-3 md:mr-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs md:text-sm font-medium text-gray-300">Inventory Users</div>
+            <div class="text-lg md:text-2xl font-semibold text-white">
+              {{ roleCounts.inventory }}
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Enhanced search bar - non-scrollable -->
-    <div class="p-3 md:p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-      <div class="relative">
-        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <svg class="h-4 w-4 md:h-5 md:w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-          </svg>
+    <!-- Enhanced search bar with role filter - non-scrollable -->
+    <div class="p-3 md:p-4 border-b border-gray-600 bg-gray-700 flex-shrink-0">
+      <div class="flex flex-col sm:flex-row gap-3">
+        <div class="relative flex-grow">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-4 w-4 md:h-5 md:w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search by name, email, department..."
+            class="w-full pl-10 px-4 py-2.5 border border-gray-600 rounded-md
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                   transition-all duration-200
+                   bg-gray-600 text-white text-sm"
+          />
         </div>
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search by name, email, department, role..."
-          class="w-full pl-8 md:pl-10 px-3 md:px-4 py-2 md:py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg
-                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                 transition-all duration-200
-                 dark:bg-gray-700 dark:text-white text-xs md:text-sm"
-        />
+        
+        <div class="sm:w-48">
+          <select
+            v-model="selectedRole"
+            class="w-full px-4 py-2.5 border border-gray-600 rounded-md
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                   transition-all duration-200
+                   bg-gray-600 text-white text-sm appearance-none"
+          >
+            <option value="all">All Roles</option>
+            <option value="admin">Admin</option>
+            <option value="manager">Manager</option>
+            <option value="sales">Sales</option>
+            <option value="inventory">Inventory</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- Display filtered count -->
+      <div class="mt-2 text-sm text-gray-300">
+        Showing {{ filteredUsers.length }} of {{ users.length }} users
       </div>
     </div>
 
     <!-- Content area - scrollable -->
-    <div class="flex-1 overflow-auto">
+    <div class="flex-1 overflow-auto bg-gray-900">
       <!-- Improved loading indicator -->
       <div v-if="isLoading" class="flex justify-center items-center p-12">
         <div class="relative">
@@ -350,34 +333,31 @@ onMounted(loadData);
       <div v-else class="overflow-x-auto p-4 w-full">
         <div class="max-w-full overflow-hidden">
           <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 shadow-sm table-fixed">
-            <thead class="bg-gray-50 dark:bg-gray-700">
+            <thead class="bg-gray-700">
               <tr>
-                <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/6">
+                <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-1/6">
                   Name
                 </th>
-                <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/8">
-                  Username
-                </th>
-                <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/6">
+                <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-1/6">
                   Email
                 </th>
-                <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/10">
+                <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-1/10">
                   Role
                 </th>
-                <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/6">
+                <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-1/6">
                   Department
                 </th>
-                <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/6">
+                <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider w-1/6">
                   Last Login
                 </th>
-                <th class="px-6 py-3.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24 sticky right-0 bg-gray-50 dark:bg-gray-700 z-10 shadow-sticky-l">
+                <th class="px-6 py-3.5 text-right text-xs font-semibold text-gray-300 uppercase tracking-wider w-24 sticky right-0 bg-gray-700 z-10 shadow-sticky-l">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody class="bg-gray-800 divide-y divide-gray-700">
               <tr v-for="user in paginatedUsers" :key="user.user_id"
-                  class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
+                  class="hover:bg-gray-700 transition-colors duration-150">
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center">
                     <div class="h-8 w-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-300 flex-shrink-0">
@@ -392,17 +372,16 @@ onMounted(loadData);
                   </div>
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <div class="truncate max-w-full">{{ user.username }}</div>
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                   <div class="truncate max-w-full" :title="user.email">{{ user.email }}</div>
                 </td>
                 <td class="px-6 py-4">
-                  <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
+                  <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-md"
                         :class="{
-                          'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-100': user.role === 'admin',
-                          'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100': user.role === 'manager',
-                          'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100': user.role === 'staff'
+                          'bg-indigo-900 text-indigo-100': user.role === 'admin' || user.role === 'Administrator',
+                          'bg-blue-900 text-blue-100': user.role === 'manager' || user.role === 'Branch Manager',
+                          'bg-green-900 text-green-100': user.role === 'staff' || user.role === 'Sales Staff',
+                          'bg-purple-900 text-purple-100': user.role === 'inventory manager' || user.role === 'Inventory Manager',
+                          'bg-yellow-800 text-yellow-100': user.role.includes('sales') && !user.role.includes('staff')
                         }">
                     {{ user.role.charAt(0).toUpperCase() + user.role.slice(1) }}
                   </span>
@@ -413,34 +392,34 @@ onMounted(loadData);
                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                   <div class="truncate max-w-full">{{ formatDate(user.last_login) }}</div>
                 </td>
-                <td class="px-6 py-4 text-right text-sm font-medium sticky right-0 bg-white dark:bg-gray-800 shadow-sticky-l">
-                  <div class="flex justify-end space-x-2">
+                <td class="px-6 py-4 text-right text-sm font-medium sticky right-0 bg-gray-900 z-10 shadow-sticky-l">
+                  <div class="flex justify-end space-x-4">
                     <button
                       @click="openViewModal(user)"
-                      class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-200"
+                      class="text-blue-400 hover:text-blue-300"
                       title="View user details"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                        <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
                     </button>
                     <button
                       @click="openUserModal(user)"
-                      class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors duration-200"
+                      class="text-blue-400 hover:text-blue-300"
                       title="Edit user"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
                     </button>
                     <button
                       @click="confirmDelete(user)"
-                      class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors duration-200"
+                      class="text-red-400 hover:text-red-300"
                       title="Delete user"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
                   </div>
@@ -620,17 +599,18 @@ onMounted(loadData);
 /* Ensure proper sticky column behavior */
 .sticky {
   position: sticky;
-  z-index: 2;
-  right: 0;
+  z-index: 10;
+  background-color: #111827 !important; /* dark bg-gray-900 */
 }
 
 /* Proper hover states on sticky columns */
 tr:hover .sticky {
-  background-color: rgba(249, 250, 251, 1); /* bg-gray-50 */
+  background-color: #111827 !important; /* dark bg-gray-900 */
 }
 
-tr:hover .dark .sticky {
-  background-color: rgba(55, 65, 81, 1); /* dark:bg-gray-700 */
+/* Make sure the table heading for actions stays consistent */
+thead .sticky {
+  background-color: #374151 !important; /* dark bg-gray-700 */
 }
 
 /* Fix for text overflow */
@@ -677,5 +657,39 @@ td, th {
   td, th {
     max-width: 100px;
   }
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Role badge styling */
+.role-badge {
+  padding: 0.25rem 0.5rem;
+  display: inline-flex;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+}
+
+/* Shadow for sticky columns in dark mode */
+.dark .shadow-sticky-l {
+  box-shadow: -4px 0 5px -2px rgba(0, 0, 0, 0.3);
+}
+
+/* Proper hover states on sticky columns in dark mode */
+.dark tr:hover .sticky {
+  background-color: #111827 !important; /* dark:bg-gray-900 */
 }
 </style>
