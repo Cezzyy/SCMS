@@ -48,9 +48,8 @@ func main() {
 	}))
 
 	// Initialize PDF generator service
-	// Use absolute paths to avoid inconsistent path resolution
-	templatesDir := "C:\\Users\\karl\\Dropbox\\PC\\Desktop\\SCMS\\backend\\cmd\\templates"
-	cssDir := "C:\\Users\\karl\\Dropbox\\PC\\Desktop\\SCMS\\backend\\cmd\\templates\\css"
+	templatesDir := "C:\\Users\\Desktop\\SCMS\\backend\\cmd\\templates"
+	cssDir := "C:\\Users\\Desktop\\SCMS\\backend\\cmd\\templates\\css"
 
 	// Log the actual paths for debugging
 	log.Printf("Templates directory (fixed): %s", templatesDir)
@@ -72,12 +71,12 @@ func main() {
 	// Initialize repositories
 	customerRepo := repository.NewCustomerRepository(db)
 	contactRepo := repository.NewContactRepository(db)
-	userRepo := repository.NewUserRepository(db)
 	productRepo := repository.NewProductRepository(db)
 	inventoryRepo := repository.NewInventoryRepository(db)
 	quotationRepo := repository.NewQuotationRepository(db)
 	orderRepo := repository.NewOrderRepository(db)
 	reportRepo := repository.NewReportRepository(db)
+	userRepo := repository.NewUserRepository(db)
 
 	// Initialize auth service
 	authService := services.NewAuthService(userRepo)
@@ -90,6 +89,7 @@ func main() {
 	quotationHandler := handlers.NewQuotationHandler(quotationRepo, customerRepo, productRepo, pdfGenerator)
 	orderHandler := handlers.NewOrderHandler(orderRepo)
 	reportHandler := handlers.NewReportHandler(reportRepo)
+	userHandler := handlers.NewUserHandler(userRepo)
 
 	// API Routes
 	// Health check
@@ -99,50 +99,17 @@ func main() {
 		})
 	})
 
-	// Auth routes - Direct Echo handler instead of wrapper
+	// Auth routes
 	e.POST("/api/auth/login", func(c echo.Context) error {
-		// Parse request body
-		var loginReq services.LoginRequest
-		if err := c.Bind(&loginReq); err != nil {
-			return c.JSON(http.StatusBadRequest, "Invalid request")
+		var req services.LoginRequest
+		if err := c.Bind(&req); err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 		}
-
-		// Validate input
-		if loginReq.Email == "" || loginReq.Password == "" {
-			return c.JSON(http.StatusBadRequest, "Email and password are required")
-		}
-
-		// Attempt to login
-		authResponse, err := authService.Login(c.Request().Context(), loginReq)
+		resp, err := authService.Login(c.Request().Context(), req)
 		if err != nil {
-			return c.JSON(http.StatusUnauthorized, err.Error())
+			return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
 		}
-
-		// Set session cookie
-		cookie := new(http.Cookie)
-		cookie.Name = "session_id"
-		cookie.Value = authResponse.SessionID
-		cookie.Path = "/"
-		cookie.HttpOnly = true
-		cookie.Secure = c.Request().TLS != nil
-		cookie.SameSite = http.SameSiteLaxMode
-		cookie.MaxAge = 86400 // 24 hours in seconds
-		c.SetCookie(cookie)
-
-		return c.JSON(http.StatusOK, authResponse)
-	})
-
-	e.POST("/api/auth/logout", func(c echo.Context) error {
-		// Clear the session cookie
-		cookie := new(http.Cookie)
-		cookie.Name = "session_id"
-		cookie.Value = ""
-		cookie.Path = "/"
-		cookie.HttpOnly = true
-		cookie.MaxAge = -1 // Delete the cookie
-		c.SetCookie(cookie)
-
-		return c.JSON(http.StatusOK, map[string]string{"message": "Logged out successfully"})
+		return c.JSON(http.StatusOK, resp)
 	})
 
 	// Customer routes
@@ -210,6 +177,15 @@ func main() {
 	e.GET("/api/reports/sales-trends/export", reportHandler.ExportSalesTrendsCSV)
 	e.GET("/api/reports/low-stock/export", reportHandler.ExportLowStockItemsCSV)
 	e.GET("/api/reports/top-customers/export", reportHandler.ExportTopCustomersCSV)
+
+	// User routes
+	e.GET("/api/users", userHandler.GetUsers)
+	e.GET("/api/users/:id", userHandler.GetUser)
+	e.POST("/api/users", userHandler.Register)
+	e.PUT("/api/users/:id", userHandler.UpdateUser)
+	e.DELETE("/api/users/:id", userHandler.DeleteUser)
+	e.PUT("/api/users/:id/password", userHandler.UpdatePassword)
+	e.GET("/api/users/search", userHandler.SearchUsers)
 
 	// Start server
 	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
