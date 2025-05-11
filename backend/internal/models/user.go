@@ -7,7 +7,6 @@ import (
 // User represents an application user (admin or regular)
 type User struct {
 	UserID       int        `db:"user_id" json:"user_id"`
-	Username     string     `db:"username" json:"username"`
 	PasswordHash string     `db:"password_hash" json:"-"`
 	Role         string     `db:"role" json:"role"`
 	FirstName    string     `db:"first_name" json:"first_name"`
