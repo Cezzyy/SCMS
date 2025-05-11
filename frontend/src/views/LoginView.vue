@@ -1,13 +1,44 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { faUser, faLock } from '@fortawesome/free-solid-svg-icons'
+import { faEnvelope, faLock } from '@fortawesome/free-solid-svg-icons'
+import { useAuthStore } from '../stores/authStore'
 
-const username = ref('')
+const email = ref('')
 const password = ref('')
+const errorMessage = ref('')
+const router = useRouter()
+const authStore = useAuthStore()
 
-const handleLogin = () => {
-  console.log('Login attempt:', { username: username.value, password: password.value })
+// Clear any previous error messages on component mount
+onMounted(() => {
+  errorMessage.value = ''
+  // For development/testing, you can set default values
+  email.value = 'admin@example.com'
+  password.value = 'password123'
+})
+
+const handleLogin = async () => {
+  // Clear previous error messages
+  errorMessage.value = ''
+
+  if (!email.value || !password.value) {
+    errorMessage.value = 'Email and password are required'
+    return
+  }
+
+  try {
+    console.log('Attempting login with:', { email: email.value })
+    await authStore.login(email.value, password.value)
+
+    // Redirect to home instead of dashboard
+    router.push('/home')
+  } catch (error: any) {
+    console.error('Login failed:', error)
+    // Display the error message from the store if available
+    errorMessage.value = authStore.error || 'Login failed. Please check your credentials and try again.'
+  }
 }
 </script>
 
@@ -31,22 +62,27 @@ const handleLogin = () => {
         <p class="text-gray-600 font-medium">Please sign in with your company credentials</p>
       </div>
 
+      <!-- Error message -->
+      <div v-if="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+        <span class="block sm:inline">{{ errorMessage }}</span>
+      </div>
+
       <!-- Login Form -->
       <form @submit.prevent="handleLogin" class="space-y-4">
-        <!-- Username Field -->
+        <!-- Email Field -->
         <div class="space-y-2">
-          <label for="username" class="block text-sm font-semibold text-gray-700">Username</label>
+          <label for="email" class="block text-sm font-semibold text-gray-700">Email</label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <font-awesome-icon :icon="faUser" class="h-5 w-5 text-accent1" />
+              <font-awesome-icon :icon="faEnvelope" class="h-5 w-5 text-accent1" />
             </div>
             <input
-              v-model="username"
-              id="username"
-              type="text"
+              v-model="email"
+              id="email"
+              type="email"
               required
               class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent1 focus:border-transparent text-gray-900 placeholder-gray-500"
-              placeholder="Enter your username"
+              placeholder="Enter your email"
             />
           </div>
         </div>
@@ -72,9 +108,17 @@ const handleLogin = () => {
         <!-- Login Button -->
         <button
           type="submit"
-          class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-accent1 hover:bg-accent2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent1 transition-colors duration-200"
+          :disabled="authStore.loading"
+          class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-accent1 hover:bg-accent2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent1 transition-colors duration-200 disabled:opacity-50"
         >
-          Sign in to Portal
+          <span v-if="authStore.loading" class="flex items-center">
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Signing in...
+          </span>
+          <span v-else>Sign in to Portal</span>
         </button>
       </form>
     </div>
