@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import type { Product } from '../types/Product';
 import type { Inventory, InventoryWithProduct } from '../types/Inventory';
 import type { User } from '../types/User';
+import { useUserStore } from '../stores/userStore';
 
 // Define props
 const props = defineProps<{
@@ -18,6 +19,9 @@ const emit = defineEmits<{
   'update-stock': [inventory: Inventory | InventoryWithProduct];
   'edit-user': [user: User];
 }>();
+
+// Initialize store for user details if needed
+const userStore = useUserStore();
 
 // Methods
 const closeModal = () => {
@@ -208,15 +212,9 @@ const displayText = (text: any) => {
 
           <!-- User view -->
           <div v-else-if="type === 'user' && item" class="space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">User ID</h4>
-                <p class="text-gray-900 dark:text-white">{{ (item as User).user_id }}</p>
-              </div>
-              <div>
-                <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Username</h4>
-                <p class="text-gray-900 dark:text-white">{{ (item as User).username }}</p>
-              </div>
+            <div>
+              <h4 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">User ID</h4>
+              <p class="text-gray-900 dark:text-white">{{ (item as User).user_id }}</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4">

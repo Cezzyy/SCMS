@@ -14,9 +14,7 @@ const authStore = useAuthStore()
 // Clear any previous error messages on component mount
 onMounted(() => {
   errorMessage.value = ''
-  // For development/testing, you can set default values
-  email.value = 'admin@example.com'
-  password.value = 'password123'
+  // Remove test credentials as we have real accounts in the database
 })
 
 const handleLogin = async () => {
@@ -24,7 +22,7 @@ const handleLogin = async () => {
   errorMessage.value = ''
 
   if (!email.value || !password.value) {
-    errorMessage.value = 'Email and password are required'
+    errorMessage.value = 'Please enter both your email and password.'
     return
   }
 
@@ -36,8 +34,26 @@ const handleLogin = async () => {
     router.push('/home')
   } catch (error: any) {
     console.error('Login failed:', error)
-    // Display the error message from the store if available
-    errorMessage.value = authStore.error || 'Login failed. Please check your credentials and try again.'
+    // Map backend error messages to user-friendly frontend messages
+    let errMsg = authStore.error;
+    if (errMsg && typeof errMsg === 'object') {
+      errMsg = (errMsg as any).error || '';
+    }
+    if (typeof errMsg !== 'string') {
+      errMsg = String(errMsg || '');
+    }
+    
+    if (errMsg.toLowerCase().includes('invalid credentials')) {
+      errorMessage.value = 'Invalid email or password. Please try again.'
+    } else if (errMsg.toLowerCase().includes('server not responding')) {
+      errorMessage.value = 'Unable to reach the server. Please check your internet connection or try again later.'
+    } else if (errMsg.toLowerCase().includes('required')) {
+      errorMessage.value = 'Please enter both your email and password.'
+    } else if (errMsg) {
+      errorMessage.value = errMsg
+    } else {
+      errorMessage.value = 'Login failed. Please check your credentials and try again.'
+    }
   }
 }
 </script>
