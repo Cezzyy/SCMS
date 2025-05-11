@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, shallowRef, onMounted, onBeforeMount, onUnmounted, defineAsyncComponent } from 'vue'
 import type { Component } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/authStore'
 
 // Lazy load components
 const DashboardComponent = defineAsyncComponent(() => import('../components/DashboardContent.vue'))
@@ -8,6 +10,10 @@ const CustomersComponent = defineAsyncComponent(() => import('../components/Cust
 const SalesOrdersComponent = defineAsyncComponent(() => import('../components/OrderList.vue'))
 const InventoryComponent = defineAsyncComponent(() => import('../components/InventoryList.vue'))
 const QuotationsComponent = defineAsyncComponent(() => import('../components/QuotationList.vue'))
+
+// Initialize stores and router
+const authStore = useAuthStore()
+const router = useRouter()
 
 // Types
 interface NavigationItem {
@@ -53,6 +59,16 @@ const toggleDarkMode = () => {
   }
 }
 
+// Logout function
+const handleLogout = async () => {
+  try {
+    await authStore.logout()
+    router.push('/login')
+  } catch (error) {
+    console.error('Logout failed:', error)
+  }
+}
+
 const navigationItems: NavigationItem[] = [
   { id: 'dashboard', name: 'Dashboard', icon: 'home' },
   { id: 'customers', name: 'Customers', icon: 'users' },
@@ -81,6 +97,11 @@ const switchComponent = (componentId: string): void => {
 
 onBeforeMount(() => {
   checkScreenSize()
+
+  // Check authentication
+  if (!authStore.isAuthenticated) {
+    router.push('/login')
+  }
 })
 
 onMounted(() => {
@@ -157,11 +178,16 @@ onUnmounted(() => {
               <font-awesome-icon icon="user" class="h-4 w-4" />
             </div>
             <div class="ml-3 min-w-0">
-              <p class="text-sm font-medium text-text-primary dark:text-white truncate">Admin User</p>
-              <p class="text-xs text-text-secondary dark:text-gray-400 truncate">administrator</p>
+              <p class="text-sm font-medium text-text-primary dark:text-white truncate">
+                {{ authStore.userFullName || 'User' }}
+              </p>
+              <p class="text-xs text-text-secondary dark:text-gray-400 truncate">
+                {{ authStore.user?.email || authStore.userRole || 'User' }}
+              </p>
             </div>
           </div>
           <button
+            @click="handleLogout"
             class="text-text-secondary hover:text-accent1 transition-colors p-1 flex-shrink-0 dark:text-gray-400 dark:hover:text-accent1"
             aria-label="Logout"
           >
