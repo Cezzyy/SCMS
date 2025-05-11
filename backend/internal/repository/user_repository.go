@@ -26,7 +26,7 @@ func NewUserRepository(db *sqlx.DB) *UserRepository {
 // GetAll retrieves all users from the database
 func (r *UserRepository) GetAll(ctx context.Context) ([]models.User, error) {
 	users := []models.User{}
-	query := `SELECT * FROM users ORDER BY username`
+	query := `SELECT * FROM users ORDER BY email`
 	err := r.db.SelectContext(ctx, &users, query)
 	return users, err
 }
@@ -42,11 +42,11 @@ func (r *UserRepository) GetByID(ctx context.Context, id int) (models.User, erro
 	return user, err
 }
 
-// GetByUsername retrieves a user by username
-func (r *UserRepository) GetByUsername(ctx context.Context, username string) (models.User, error) {
+// GetByEmail retrieves a user by email
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (models.User, error) {
 	var user models.User
-	query := `SELECT * FROM users WHERE username = $1`
-	err := r.db.GetContext(ctx, &user, query, username)
+	query := `SELECT * FROM users WHERE email = $1`
+	err := r.db.GetContext(ctx, &user, query, email)
 	if err == sql.ErrNoRows {
 		return user, errors.New("user not found")
 	}
@@ -61,16 +61,15 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 
 	query := `
 		INSERT INTO users (
-			username, password_hash, role, first_name, last_name, 
+			password_hash, role, first_name, last_name, 
 			email, phone, department, position, created_at, updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 		) RETURNING user_id, created_at, updated_at`
 
 	err := r.db.QueryRowContext(
 		ctx,
 		query,
-		user.Username,
 		user.PasswordHash,
 		user.Role,
 		user.FirstName,
@@ -102,22 +101,20 @@ func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
 
 	query := `
 		UPDATE users SET
-			username = $1,
-			role = $2,
-			first_name = $3,
-			last_name = $4,
-			email = $5,
-			phone = $6,
-			department = $7,
-			position = $8,
-			updated_at = $9
-		WHERE user_id = $10
+			role = $1,
+			first_name = $2,
+			last_name = $3,
+			email = $4,
+			phone = $5,
+			department = $6,
+			position = $7,
+			updated_at = $8
+		WHERE user_id = $9
 		RETURNING updated_at`
 
 	result := r.db.QueryRowContext(
 		ctx,
 		query,
-		user.Username,
 		user.Role,
 		user.FirstName,
 		user.LastName,
@@ -204,17 +201,16 @@ func (r *UserRepository) Delete(ctx context.Context, id int) error {
 	return nil
 }
 
-// SearchUsers searches for users by name or username
+// SearchUsers searches for users by name or email
 func (r *UserRepository) SearchUsers(ctx context.Context, term string) ([]models.User, error) {
 	users := []models.User{}
 
 	// Using PostgreSQL's ILIKE for case-insensitive search on multiple fields
 	query := `
 		SELECT * FROM users 
-		WHERE username ILIKE $1 
-		   OR CONCAT(first_name, ' ', last_name) ILIKE $1
+		WHERE CONCAT(first_name, ' ', last_name) ILIKE $1
 		   OR email ILIKE $1
-		ORDER BY username`
+		ORDER BY email`
 
 	err := r.db.SelectContext(ctx, &users, query, "%"+term+"%")
 	return users, err
