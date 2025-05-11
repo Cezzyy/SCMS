@@ -3,7 +3,14 @@ export interface Inventory {
   product_id: number;
   current_stock: number;
   reorder_level: number;
-  last_restock_date?: string;
+  last_restock_date?: Date;
+}
+
+export interface InventoryWithProduct extends Inventory {
+  product_name?: string;
+  model?: string;
+  price?: number;
+  isLowStock?: boolean;
 }
 
 export interface InventoryCreate extends Omit<Inventory, 'inventory_id'> {
@@ -18,7 +25,7 @@ export interface StockUpdate {
   current_stock: number;
 }
 
-export interface LowStockItem extends Inventory {
+export interface LowStockItem extends InventoryWithProduct {
   product_name: string;
   price: number;
-} 
+}
