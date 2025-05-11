@@ -41,24 +41,6 @@ type AuthResponse struct {
 
 // Login authenticates a user and returns a session
 func (s *AuthService) Login(ctx context.Context, req LoginRequest) (*AuthResponse, error) {
-	// TEMPORARY: For development, accept a hardcoded admin user
-	if req.Email == "admin@example.com" && req.Password == "password123" {
-		// Create simple session ID
-		sessionID := generateSessionID()
-		expiresAt := time.Now().Add(24 * time.Hour)
-
-		return &AuthResponse{
-			UserID:    1,
-			Email:     "admin@example.com",
-			FirstName: "Admin",
-			LastName:  "User",
-			Role:      "admin",
-			SessionID: sessionID,
-			ExpiresAt: expiresAt,
-		}, nil
-	}
-
-	// Continue with normal DB authentication if not using test credentials
 	// Get user by email
 	user, err := s.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
